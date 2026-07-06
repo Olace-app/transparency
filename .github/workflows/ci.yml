@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: metrics catalog sync
+        run: python3 metrics/check_sync.py
+      - name: vectors parse
+        run: |
+          python3 -c "import json; json.load(open('test-vectors/e2ee_vectors.json')); json.load(open('test-vectors/zk_vectors.json')); print('vectors OK')"
