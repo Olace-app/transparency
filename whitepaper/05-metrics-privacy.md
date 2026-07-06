@@ -20,7 +20,7 @@ Clients report counter increments; the backend folds them into rollup rows keyed
 
 ## Direct Mode
 
-Conversations in Maximum Privacy (Direct Mode) may emit exactly one metric: `chat.security_mode`, a counter that says a Direct Mode conversation happened. Nothing else about such a conversation is reported, including the performance metrics that other routes emit. This rule is stated in the catalog itself and enforced in the clients.
+Direct Mode is Olace's Maximum Privacy setting: conversations that never touch the backend beyond transport. Such conversations may emit exactly one metric: `chat.security_mode`, a counter that says a Direct Mode conversation happened. Nothing else about such a conversation is reported, including the performance metrics that other routes emit. This rule is stated in the client catalog itself and enforced in the clients.
 
 ## Keeping the copies honest
 

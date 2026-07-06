@@ -13,7 +13,7 @@ Olace is remote access to your own local AI. A phone talking to your desktop's m
 ## What we do not protect against
 
 - **A compromised device.** Olace runs on your hardware with your data. Malware with your OS privileges can read what you can read. Local data is plaintext at rest on native platforms by design; the device is inside the trust boundary and OS disk encryption is the layer for stolen-hardware risk (see [08](08-honest-limitations.md)).
-- **A malicious client build.** If the app or daemon binary you run is hostile, no protocol saves you. The mitigation is this repo: the code that touches your data is open, and the closed apps import it verbatim. Reproducible builds are a goal, not a current guarantee.
+- **A malicious client build.** If the app or daemon binary you run is hostile, no protocol saves you. The mitigation is this repo: the cryptographic core that protects your data is open, and the closed apps import it verbatim. Reproducible builds are a goal, not a current guarantee.
 - **The web platform's trust model.** A web app re-fetches its code from the server on every visit. We reduce the blast radius (the Master Key is never persisted in browser storage), but the web cannot offer the same guarantees as the installed apps (see [08](08-honest-limitations.md)).
 - **Traffic metadata.** Encryption hides content, not existence. Timing, sizes and presence are visible to the server and the network (see [08](08-honest-limitations.md)).
 

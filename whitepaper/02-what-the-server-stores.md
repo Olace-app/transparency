@@ -4,14 +4,16 @@ Everything the Olace backend persists, by data class. "Server can read" means th
 
 | Data class | At rest | Server can read? | Notes |
 |---|---|---|---|
-| Conversation backups (`conversation_backups.payload_enc`) | `zk1` envelope, AES-256-GCM under a per-conversation key derived from your Master Key | **No** | The server never holds the MK. Plaintext checkpoints are rejected at the API and by a CHECK constraint. |
+| Conversation backups (`conversation_backups.payload_enc`) | `zk1` envelope, AES-256-GCM under a per-conversation key derived from your Master Key (MK) | **No** | The server never holds the MK. Plaintext checkpoints are rejected at the API and by a CHECK constraint. |
 | Research context (`research_context_enc`) | `zk1` envelope | **No** | Same key hierarchy, separate purpose string. |
 | Media backups (`media_backups` blobs in object storage) | `zk1` bytes, AES-256-GCM per attachment | **No** | Encrypted client-side before upload. |
 | Media file names and MIME types (`file_name_enc`, `mime_type_enc`) | `zk1`-derived envelope, field name bound into the AAD | **No** | A file-name ciphertext cannot be replayed as a MIME type. |
 | Project backups (`project_backups.payload_enc`) | `zk1` envelope | **No** | |
+| Custom instructions backup | `zk1` envelope (purpose `instr\|<userId>`) | **No** | |
+| BYOK key vault | `zk1` envelope (purpose `byok_vault\|<userId>`) | **No** | Your provider API keys, encrypted under your Master Key. The server cannot tell which providers you configured. |
 | Wrapped Master Key (`user_encryption_keys.wrapped_mk`) | AES-256-GCM under a key derived from your Recovery Key | **No** | The Recovery Key exists only on paper and in your devices. |
 | PIN vault (`pin_vault`) | Encrypted Recovery Key, Argon2 salt and params, a SHA-256 hash of the auth tag, pepper key id, attempt counter | **No** | The vault key requires the PIN, and its derivation includes a pepper held outside the database. See [03](03-zero-knowledge-backups.md). |
-| Text size metadata (`text_size_bytes`) | Integer | **Yes** | Used for quota accounting. Sizes leak coarse information about how much you write; content does not. |
+| Text size metadata (`text_size_bytes`) | Integer | **Yes** | Used for quota accounting. Sizes leak how much you write, not what you write. |
 | Settings profile (`user_sync_profiles.profile_enc`) | Encrypted server-side with a server-held key | **Yes, by design** | App settings and sync bookkeeping, not conversation content. Server-side encryption here protects against database exposure, not against Olace. Documented as the deliberate exception it is. |
 | Account identity (phone number, email) | Encrypted server-side with a server-held key | **Yes, by design** | Needed to sign you in, send OTPs, and meet legal obligations. Never placed in the zero-knowledge profile blob. |
 | Device records, pairings, presence | Rows with HMAC-canonicalized device ids (`didv1_...`, see [reference/device_id.py](../reference/device_id.py)) | **Yes** | Raw hardware identifiers are never stored; the HMAC form is not reversible to the OS id. |
@@ -30,4 +32,4 @@ Everything the Olace backend persists, by data class. "Server can read" means th
 
 ## Chat traffic (not storage)
 
-Chat requests to your own hardware run locally or device-to-device encrypted. Cloud-routed chat passes through the backend in TLS-protected transport and is orchestrated in memory; it is not written to conversation storage server-side. Cloud backup, when enabled, is written by your device as `zk1` ciphertext through the sync API.
+Chat requests to your own hardware run locally or device-to-device encrypted. One disclosed exception: when a local or paired conversation invokes a feature the backend provides (web search tools, the cloud vision bridge), the context needed for that feature is handed to the backend for the duration of the request, exactly as a cloud-routed chat would be. Maximum Privacy (Direct Mode) conversations never do this. Cloud-routed chat passes through the backend in TLS-protected transport and is orchestrated in memory; it is not written to conversation storage server-side. Cloud backup, when enabled, is written by your device as `zk1` ciphertext through the sync API.

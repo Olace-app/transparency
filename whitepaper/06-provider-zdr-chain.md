@@ -20,7 +20,7 @@ The backend itself does not log prompts or completions on this route, and does n
 
 ## Bring your own key
 
-BYOK requests never touch the Olace backend at all: the app calls your chosen provider directly over HTTPS from your device, and your API key lives in your device's secure storage. What that provider retains is between you and them; Olace adds no curation layer and claims none.
+BYOK inference requests go from your device straight to the provider over HTTPS; your API key lives in your device's secure storage and is never sent to Olace. What that provider retains is between you and them; Olace adds no curation layer and claims none. Features a BYOK provider does not cover (search tools, the cloud vision bridge) run on the first-party route with everything this section describes.
 
 ## Search and weather
 

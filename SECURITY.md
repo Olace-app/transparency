@@ -4,7 +4,7 @@
 
 Email **security@olace.app** with what you found, how to reproduce it, and what you believe the impact is. PGP is not required; if you want an encrypted channel, say so in a first plain message and we will arrange one.
 
-You will get an acknowledgment within 72 hours and a substantive assessment within 14 days.
+You will get an acknowledgment within 3 business days and a substantive assessment within 14 days.
 
 ## Coordinated disclosure
 
@@ -21,7 +21,7 @@ Out of scope: denial of service through volume, findings that require a compromi
 
 ## Safe harbor
 
-Good-faith research against **your own accounts and your own devices** is welcome and will not be met with legal action. Do not access other people's data, degrade the service for others, or retain data you stumbled into; if you brush against someone else's data despite trying not to, stop, report it, and delete what you hold.
+Good-faith research against **your own accounts and your own devices** is welcome. We will not initiate or support legal action against you for it, and we consider such research authorized under applicable anti-hacking and anti-circumvention laws. If a third party pursues you over research conducted within this policy, we will state on record that it was authorized. Do not access other people's data, degrade the service for others, or retain data you stumbled into; if you brush against someone else's data despite trying not to, stop, report it, and delete what you hold.
 
 ## No bounty yet
 

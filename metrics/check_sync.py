@@ -56,7 +56,7 @@ def main() -> int:
                   f"(name drift breaks aggregation): {missing}")
 
     if ok:
-        print(f"check_sync: OK — backend={len(backend)} names; "
+        print(f"check_sync: OK: backend={len(backend)} names; "
               f"daemon={len(daemon)} and flutter={len(flutter)} are exact subsets")
     return 0 if ok else 1
 

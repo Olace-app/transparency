@@ -17,7 +17,7 @@ per-object data keys ──AES-256-GCM──► zk1 envelopes
 ```
 
 - **Master Key**: generated on your device (`ZkCrypto.generateKeys`, [src/zk_crypto.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/zk_crypto.dart)). Stored in the OS keystore on desktop and mobile; memory-only per session on web.
-- **Recovery Key**: 16 random bytes formatted as `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXX` ([src/recovery_key.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/recovery_key.dart)). It wraps the MK; the server stores only the wrapped result. Lose the Recovery Key and every unlock method, and your backups are unrecoverable. That is the design, not a bug.
+- **Recovery Key**: 16 random bytes formatted as `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-X` ([src/recovery_key.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/recovery_key.dart)). It wraps the MK; the server stores only the wrapped result. Lose the Recovery Key and every unlock method, and your backups are unrecoverable. That is the design, not a bug.
 - **Per-purpose data keys**: every object class and id gets its own key via the purpose string (`conv|<userId>|<conversationId>`, `proj|...`, `rctx|...`, `instr|...`, `byok_vault|...`, `media|<userId>|<attachmentId>`). No two objects share an AES key, and the purpose doubles as GCM AAD, so a ciphertext cannot be replayed in another context.
 
 ## The zk1 envelope

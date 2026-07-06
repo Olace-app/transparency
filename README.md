@@ -2,7 +2,7 @@
 
 [Olace](https://olace.app) is remote access to your own local AI. This repo is the public record of how it handles your data: the security white paper, the complete operator metrics catalog, the cross-implementation test vectors, and the vulnerability disclosure policy.
 
-The claim in one sentence: **the code that touches your data is open, the server cannot read your backups, and both statements are checkable here.**
+The claim in one sentence: **the cryptographic core that protects your data is open, the server cannot read your backups, and both statements are checkable here.**
 
 ## The white paper
 
@@ -21,7 +21,7 @@ Section 8 is not an afterthought. If you read one section as a skeptic, read tha
 
 | Repo | Language | What it is |
 |---|---|---|
-| [olace-crypto-dart](https://github.com/Olace-app/olace-crypto-dart) | Dart | Client-side crypto: zero-knowledge backup encryption, PIN vault, recovery keys, E2EE session core, MK transfer. Imported verbatim by the Olace app. |
+| [olace-crypto-dart](https://github.com/Olace-app/olace-crypto-dart) | Dart | Client-side crypto: zero-knowledge backup encryption, PIN vault, recovery keys, E2EE session core, Master Key transfer. Imported verbatim by the Olace app. |
 | [olace-e2ee-go](https://github.com/Olace-app/olace-e2ee-go) | Go | Daemon-side crypto: E2EE sessions, handshake transcripts, device identity at-rest protection, OS keystore. Imported verbatim by the Olace daemon. |
 
 ## Test vectors
@@ -30,7 +30,7 @@ Section 8 is not an afterthought. If you read one section as a skeptic, read tha
 
 ## Metrics catalog
 
-[metrics/](metrics/) holds verbatim copies of the metric catalogs from all three codebases plus `check_sync.py`, which verifies they agree. Every metric dimension is a bounded enum; there is no field in the pipeline that could carry an identifier or content. The private repos byte-diff their live catalogs against these copies in their own checks.
+[metrics/](metrics/) holds verbatim copies of the metric catalogs from all three codebases plus `check_sync.py`, which verifies every daemon and app metric name appears byte-identical in the backend catalog. Every metric dimension is a bounded enum; there is no field in the pipeline that could carry an identifier or content. The private repos byte-diff their live catalogs against these copies in their own checks.
 
 ## Reference
 
