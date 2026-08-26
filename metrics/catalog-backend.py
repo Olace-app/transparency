@@ -48,6 +48,7 @@ M_INFRA_DB_POOL_WAIT = "infra.db_pool_wait"
 M_INFRA_S3_OP = "infra.s3_op"
 M_INFRA_PUSH = "infra.push"
 M_INFRA_RATE_LIMIT_REJECT = "infra.rate_limit_reject"
+M_INFRA_RATE_LIMIT_FALLBACK = "infra.rate_limit_fallback"
 M_INFRA_EXA_QUOTA_BREACH = "infra.exa_quota_breach"
 M_AUTH_OTP = "auth.otp"
 M_AUTH_TOKEN_REFRESH = "auth.token_refresh"
@@ -55,6 +56,11 @@ M_META_REPORTS_RECEIVED = "meta.reports_received"
 M_PAIR_FINALIZE = "pair.finalize"
 M_ABUSE_ENFORCEMENT = "abuse.enforcement"
 M_CHAT_CLOUD_MODEL = "chat.cloud_model"
+M_INFRA_HTTP_5XX = "infra.http_5xx"
+M_BILLING_WEBHOOK = "billing.webhook"
+M_BILLING_CREDIT_SETTLE = "billing.credit_settle"
+M_CHAT_PROVIDER_ERROR = "chat.provider_error"
+M_CHAT_STREAM_TERMINAL = "chat.stream_terminal"
 
 # Tier 3a — device-behavior, reported by the Flutter client.
 M_CHAT_SECURITY_MODE = "chat.security_mode"
@@ -77,6 +83,19 @@ M_CHAT_IMAGE_INPUT = "chat.image_input"
 M_ONBOARDING_MK_TRANSFER = "onboarding.mk_transfer"
 M_LOCAL_THROUGHPUT = "local.throughput"
 M_SYNC_OPERATION = "sync.operation"
+# One uncaught app-level fault. Counts only: the fault CLASS and which engine
+# it happened in, never a message, an exception type, or a stack. It answers
+# "is 1.0.3 crashing more than 1.0.2, and on which platform", which is the
+# question that needs no content to answer. Diagnosing a specific crash is the
+# user's own report, not this counter.
+M_APP_CRASH = "app.crash"
+# Paired-turn TTFT, measured end to end by the consuming client (dispatch ->
+# first answer token rendered). Its host-side half is M_PAIRED_HOST_TTFT
+# below, reported by the paired host's own daemon over the same turn. Both
+# exist because neither alone is attributable: end-to-end cannot say whether
+# the wait was the model or the network, and host-side cannot see the network.
+# The gap between their medians IS the carrier tax.
+M_PAIRED_TTFT = "paired.ttft"
 
 # Tier 3b — device-behavior, reported by the Go daemon.
 M_RELAY_TTFT = "relay.ttft"
@@ -97,6 +116,28 @@ M_CRYPTO_E2EE_HANDSHAKE = "crypto.e2ee_handshake"
 # Olace Bridge (OpenAI-compatible localhost endpoint on the daemon).
 M_BRIDGE_REQUEST = "bridge.request"
 M_BRIDGE_TTFT = "bridge.ttft"
+# Host half of a paired turn — see M_PAIRED_TTFT above.
+M_PAIRED_HOST_TTFT = "paired.host_ttft"
+# Fleet calibration fit — how far the ctx-budget formula's prediction sits
+# from what real machines actually verified, as a ratio histogram (integer
+# percent: 100 = formula was exact, 60 = machine verified 60% of the
+# prediction). Deliberately TWO MARGINAL views instead of one joint cube:
+# formula_fit slices by model family + size (the axes the budget constants
+# are keyed on), hw_fit by gpu vendor + tier. A joint (rare GPU x rare
+# model) cell would be one identifiable machine; the marginals never form
+# it. Never an exact model id — family + download-size bucket only.
+M_CTX_FORMULA_FIT = "ctx.formula_fit"
+M_CTX_HW_FIT = "ctx.hw_fit"
+# One 3-strike calibration clamp landed — the formula over-predicted on
+# this hardware class badly enough for three real OOMs. The hotspot map
+# for where the tier tables and overhead constants are wrong.
+M_CTX_CLAMP = "ctx.clamp"
+# Cold prefill speed (prompt tokens/sec) per hardware tier. Closes the
+# "safe ctx is not fast ctx" gap: a class where the calibrated ctx loads
+# but prefill is painful means the model RECOMMENDATION is wrong even
+# though the budget is right. Full prefills only (the daemon suppresses
+# KV-warm turns, whose near-zero prefill would poison the histogram).
+M_CTX_PREFILL_SPEED = "ctx.prefill_speed"
 
 # --------------------------------------------------------------------------
 # Backend-stamped dimension keys. These are NOT client-provided — the backend
@@ -116,6 +157,12 @@ DIM_DAEMON_VERSION = "daemon_version"
 LE_LATENCY_BOUNDS_MS = (200, 500, 1000, 2000, 5000, 10000)
 LE_THROUGHPUT_BOUNDS_TPS = (5, 10, 20, 40, 80)
 LE_BACKOFF_BOUNDS_MS = (2000, 5000, 10000, 20000)
+# Ratio buckets are integer PERCENT on purpose: float bounds label
+# differently across Python/Go/Dart (str(1.0) vs FormatFloat -> "1"),
+# which silently splits a counter. 95..110 is the "formula was right"
+# band; below is over-prediction, above under-prediction.
+LE_RATIO_BOUNDS_PCT = (40, 60, 80, 95, 110, 130, 160)
+LE_PREFILL_BOUNDS_TPS = (50, 150, 400, 1000, 3000)
 
 
 def _labels(bounds: tuple[int, ...]) -> tuple[str, ...]:
@@ -125,6 +172,8 @@ def _labels(bounds: tuple[int, ...]) -> tuple[str, ...]:
 LE_LATENCY_LABELS = _labels(LE_LATENCY_BOUNDS_MS)
 LE_THROUGHPUT_LABELS = _labels(LE_THROUGHPUT_BOUNDS_TPS)
 LE_BACKOFF_LABELS = _labels(LE_BACKOFF_BOUNDS_MS)
+LE_RATIO_LABELS = _labels(LE_RATIO_BOUNDS_PCT)
+LE_PREFILL_LABELS = _labels(LE_PREFILL_BOUNDS_TPS)
 
 # metric -> the numeric bucket bounds it uses (also marks it as a histogram).
 METRIC_BUCKETS: dict[str, tuple[int, ...]] = {
@@ -137,9 +186,14 @@ METRIC_BUCKETS: dict[str, tuple[int, ...]] = {
     M_LOCAL_TTFT: LE_LATENCY_BOUNDS_MS,
     M_LOCAL_TTFT_FIRST: LE_LATENCY_BOUNDS_MS,
     M_BRIDGE_TTFT: LE_LATENCY_BOUNDS_MS,
+    M_PAIRED_TTFT: LE_LATENCY_BOUNDS_MS,
+    M_PAIRED_HOST_TTFT: LE_LATENCY_BOUNDS_MS,
     M_RELAY_THROUGHPUT: LE_THROUGHPUT_BOUNDS_TPS,
     M_LOCAL_THROUGHPUT: LE_THROUGHPUT_BOUNDS_TPS,
     M_TUNNEL_BACKOFF_DEPTH: LE_BACKOFF_BOUNDS_MS,
+    M_CTX_FORMULA_FIT: LE_RATIO_BOUNDS_PCT,
+    M_CTX_HW_FIT: LE_RATIO_BOUNDS_PCT,
+    M_CTX_PREFILL_SPEED: LE_PREFILL_BOUNDS_TPS,
 }
 
 
@@ -152,6 +206,33 @@ def _le_labels_for(metric: str) -> frozenset[str]:
 # --------------------------------------------------------------------------
 ROUTE = frozenset({"local", "paired", "cloud"})
 TRANSPORT = frozenset({"lan_p2p", "relay"})
+# chat.transport_resolution `reason` — WHICH branch chose the carrier. Without
+# it, a phone that is genuinely away from home and a phone that is home but
+# losing the LAN probe race are the same `transport=relay` count, and they
+# call for opposite fixes. Each value is one terminal branch of the Flutter
+# P2PClientService.resolveLanRoute decision tree.
+# LOCKSTEP: Flutter lib/constants/metric_constants.dart MetricValues.reason*.
+TRANSPORT_REASON = frozenset(
+    {
+        # Chose LAN.
+        "hot",  # an established, live LAN session was already up
+        "ping_ok",  # encrypted route ping answered inside the budget
+        "probe_ok",  # on-demand endpoint probe succeeded
+        "home_known",  # network just changed, but to a known-good one for this pair
+        # Chose relay.
+        "web",  # web build — no LAN P2P exists
+        "subwindow",  # desktop subwindow; its chat runs on the leader
+        "lan_unavailable",  # no LAN-plausible interface (cellular, no Wi-Fi)
+        "handshake_blocked",  # TCP answers but E2EE is refused (stale key)
+        "recently_unreachable",  # negative cache from a recent failed probe
+        "network_changed",  # just switched networks, and this one is unknown
+        "ping_failed",  # ping to a supposedly-live session went unanswered
+        "probe_unproven",  # endpoints answered, but the session is not proven
+        "probe_timeout",  # probe did not answer within the route budget
+        "probe_error",  # probe threw
+        "lan_not_preferred",  # caller did not ask for LAN
+    }
+)
 # Bridge adds the "local" transport (request served on the same machine).
 BRIDGE_TRANSPORT = frozenset({"local", "lan_p2p", "relay"})
 BRIDGE_OUTCOME = frozenset(
@@ -169,7 +250,9 @@ BRIDGE_OUTCOME = frozenset(
         "internal",
     }
 )
-PROVIDER = frozenset({"ollama", "lmstudio"})
+# LOCKSTEP: must stay byte-identical with Daemon internal/metrics/catalog.go
+# and Flutter lib/constants/metric_constants.dart provider vocabularies.
+PROVIDER = frozenset({"ollama", "lmstudio", "llamacpp"})
 CLOUD_KEY = frozenset({"olace", "byok"})
 SECURITY_MODE = frozenset({"standard", "max_privacy"})
 PLATFORM = frozenset({"ios", "android", "linux", "windows", "macos", "web", "unknown"})
@@ -183,6 +266,7 @@ TOOL = frozenset(
         "web_search",
         "news_search",
         "get_weather",
+        "find_places",
         "extract_page",
         "deep_research",
         "list_project_files",
@@ -190,6 +274,8 @@ TOOL = frozenset(
         "device_pairing",
         "model_hub",
         "setup_local_ai",
+        "system_capabilities",
+        "invoke_capability",
     }
 )
 LIMITER = frozenset(
@@ -206,6 +292,18 @@ LIMITER = frozenset(
         "openrouter_chat",
         "openrouter_image",
         "openrouter_utility",
+        "chat_fair_use_burst",
+        "content_pack_invalidate",
+        "refresh",
+        "ws_ticket",
+        "ws_handshake",
+        "recovery_verify",
+        "identity_change",
+        "pin_vault",
+        "chat_start",
+        "sync",
+        "pairing",
+        "text",
     }
 )
 CLASSIFY_DECISION = frozenset({"direct", "need_tool", "cutoff", "done"})
@@ -219,9 +317,48 @@ PEEK_VARIANT = frozenset(
 BLOCK_TYPE = frozenset(
     {"other_files", "research_files", "attached_files", "project_files", "attachments"}
 )
-# success/error — shared by crypto.e2ee_handshake, chat.image_generation,
-# onboarding.mk_transfer, sync.operation.
+# success/error — shared by crypto.e2ee_handshake, onboarding.mk_transfer,
+# sync.operation, billing.credit_settle, provider.auto_revive.
 SUCCESS_ERROR = frozenset({"success", "error"})
+
+# Which handler caught the fault, which is also what kind it is: 'widget' =
+# FlutterError.onError, a synchronous build/layout/paint failure; 'async' = an
+# uncaught async error, reaching PlatformDispatcher.onError on the leader and
+# runZonedGuarded in a subwindow.
+APP_CRASH_FAULT = frozenset({"widget", "async"})
+# Which engine it happened in. Desktop runs one leader plus up to ten
+# subwindow engines in a single process, and a subwindow fault is the more
+# serious of the two because an uncaught async error there closes the window.
+APP_SURFACE = frozenset({"leader", "subwindow"})
+# chat.image_generation — 'cancelled' keeps user Stops out of the error rate.
+IMAGE_GEN_OUTCOME = frozenset({"success", "error", "cancelled"})
+# infra.http_5xx — coarse route grouping for server-error rate. Bounded by
+# construction: http_route_group() collapses anything unrecognised to 'other'.
+ROUTE_GROUP = frozenset(
+    {
+        "auth",
+        "chat",
+        "sync",
+        "billing",
+        "pairing",
+        "models",
+        "p2p",
+        "metrics",
+        "webhooks",
+        "ops",
+        "other",
+    }
+)
+# billing.webhook — merchant-of-record webhook processing outcome.
+WEBHOOK_PROVIDER = frozenset({"polar", "revenuecat"})
+WEBHOOK_OUTCOME = frozenset({"ok", "invalid_signature", "error", "ignored"})
+# chat.provider_error — coarse class of an upstream model-provider failure,
+# mirroring the on_llm_error scrub taxonomy in utils/chat/streaming.py.
+PROVIDER_ERROR_CLASS = frozenset({"rate_limited", "service_unavailable", "other"})
+# chat.stream_terminal — server-side terminal state of one SSE chat stream.
+# Complements client-reported chat.turn_outcome: a client that dies mid-stream
+# reports nothing, this counter still lands.
+STREAM_TERMINAL = frozenset({"done", "client_disconnect", "error"})
 # chat.turn_outcome — the terminal state of one chat turn.
 TURN_OUTCOME = frozenset({"completed", "error", "cancelled"})
 # pair.finalize — claim-attempt result. 'stale' covers no matching live
@@ -252,6 +389,21 @@ MODEL_FAMILY = frozenset(
         "other",
     }
 )
+# ctx.formula_fit — coarse LOCAL model family, mapped by the daemon from the
+# model tag by substring; a hand-pulled hf.co tag or anything unrecognised
+# collapses to "other". Same rule as MODEL_FAMILY: never an exact model id,
+# because local tags can be arbitrary user-chosen repo names.
+LOCAL_MODEL_FAMILY = frozenset(
+    {"llama", "qwen", "gemma", "deepseek", "mistral", "phi", "other"}
+)
+# ctx.formula_fit — the model's on-disk download size, bucketed. Together
+# with family this is the granularity the budget constants are keyed on
+# (overheadForSize is size-keyed, safetyThreshold is arch-keyed); the exact
+# model adds nothing the constants could use.
+MODEL_SIZE_BUCKET = frozenset({"lt2", "2_4", "4_8", "8plus"})
+# ctx.hw_fit / ctx.clamp — GPU vendor class. "other" covers no-GPU hosts
+# and anything unrecognised; Apple Silicon reports "apple".
+GPU_VENDOR = frozenset({"nvidia", "amd", "apple", "intel", "other"})
 
 # --------------------------------------------------------------------------
 # METRIC_DIM_SPEC — per-metric, the dimension keys a CLIENT may provide and the
@@ -263,10 +415,14 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     # Tier 2 — backend ops
     M_WS_CONNECT: {"kind": frozenset({"chat", "device", "desktop"})},
     M_RELAY_EVENT: {
-        "outcome": frozenset({"error", "drop", "timeout", "owner_mismatch"})
+        "outcome": frozenset(
+            {"error", "drop", "timeout", "owner_mismatch", "congestion"}
+        )
     },
     M_TUNNEL_EVENT: {
-        "kind": frozenset({"stale", "lease_conflict", "displaced", "receive_timeout"})
+        "kind": frozenset(
+            {"stale", "lease_conflict", "displaced", "receive_timeout", "lease_steal"}
+        )
     },
     M_CHAT_CLASSIFY_DECISION: {"decision": CLASSIFY_DECISION, "route": ROUTE},
     M_CHAT_TOOL_EXECUTION: {
@@ -293,17 +449,28 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "outcome": frozenset({"sent", "failed"}),
     },
     M_INFRA_RATE_LIMIT_REJECT: {"limiter": LIMITER},
+    # A named limiter's Redis path threw and the check fell back to the
+    # per-process window (or the WS handshake gate failed open). Any sustained
+    # count here means distributed limits are silently running per-pod.
+    M_INFRA_RATE_LIMIT_FALLBACK: {"limiter": LIMITER},
     M_INFRA_EXA_QUOTA_BREACH: {},
     M_AUTH_OTP: {
         "channel": frozenset({"sms", "email"}),
         "action": frozenset({"send", "verify"}),
         "outcome": frozenset({"ok", "rejected", "expired", "error"}),
     },
-    M_AUTH_TOKEN_REFRESH: {"outcome": frozenset({"ok", "rejected"})},
+    # 'error' is an unexpected server-side failure (DB/Redis down) — without it
+    # a total refresh outage reads as healthy silence.
+    M_AUTH_TOKEN_REFRESH: {"outcome": frozenset({"ok", "rejected", "error"})},
     M_META_REPORTS_RECEIVED: {"source": frozenset({"flutter", "daemon"})},
     M_PAIR_FINALIZE: {"outcome": PAIR_OUTCOME},
     M_ABUSE_ENFORCEMENT: {"action": ABUSE_ACTION},
     M_CHAT_CLOUD_MODEL: {"family": MODEL_FAMILY},
+    M_INFRA_HTTP_5XX: {"route_group": ROUTE_GROUP},
+    M_BILLING_WEBHOOK: {"provider": WEBHOOK_PROVIDER, "outcome": WEBHOOK_OUTCOME},
+    M_BILLING_CREDIT_SETTLE: {"outcome": SUCCESS_ERROR},
+    M_CHAT_PROVIDER_ERROR: {"class": PROVIDER_ERROR_CLASS},
+    M_CHAT_STREAM_TERMINAL: {"outcome": STREAM_TERMINAL},
     # Tier 3a — device-behavior, Flutter
     M_CHAT_SECURITY_MODE: {"mode": SECURITY_MODE},
     M_CHAT_ROUTE: {
@@ -312,7 +479,10 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "provider": PROVIDER,
         "cloud_key": CLOUD_KEY,
     },
-    M_CHAT_TRANSPORT_RESOLUTION: {"transport": TRANSPORT},
+    M_CHAT_TRANSPORT_RESOLUTION: {
+        "transport": TRANSPORT,
+        "reason": TRANSPORT_REASON,
+    },
     M_PEEK_OUTCOME: {"variant": PEEK_VARIANT, "decision": PEEK_DECISION},
     M_PEEK_GUARD_OVERTURN: {"variant": PEEK_VARIANT},
     M_PEEK_CUTOFF_HANDOFF: {"suppressed": BOOL},
@@ -344,7 +514,7 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         # first-party-cloud so BYOK reliability is not masked by blending.
         "cloud_key": CLOUD_KEY,
     },
-    M_CHAT_IMAGE_GENERATION: {"outcome": SUCCESS_ERROR, "cloud_key": CLOUD_KEY},
+    M_CHAT_IMAGE_GENERATION: {"outcome": IMAGE_GEN_OUTCOME, "cloud_key": CLOUD_KEY},
     M_CHAT_IMAGE_INPUT: {"route": ROUTE},
     M_ONBOARDING_MK_TRANSFER: {"outcome": SUCCESS_ERROR},
     M_LOCAL_THROUGHPUT: {
@@ -352,6 +522,18 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "le": _le_labels_for(M_LOCAL_THROUGHPUT),
     },
     M_SYNC_OPERATION: {"outcome": SUCCESS_ERROR},
+    M_APP_CRASH: {"fault": APP_CRASH_FAULT, "surface": APP_SURFACE},
+    # paired.ttft / paired.host_ttft share a dim shape on purpose: the two are
+    # only comparable if they slice the same way. `state` is "did the host
+    # start hot" — cold covers a model load, a runtime wake, OR a broker
+    # queue, since all three mean the model was not there to answer, and both
+    # emitters apply that same rule.
+    M_PAIRED_TTFT: {
+        "provider": PROVIDER,
+        "transport": TRANSPORT,
+        "state": frozenset({"cold", "hot"}),
+        "le": _le_labels_for(M_PAIRED_TTFT),
+    },
     # Tier 3b — device-behavior, daemon
     M_RELAY_TTFT: {"provider": PROVIDER, "le": _le_labels_for(M_RELAY_TTFT)},
     M_RELAY_TTFT_FIRST: {
@@ -388,7 +570,10 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "provider": PROVIDER,
         "outcome": frozenset({"success", "error", "cancelled"}),
     },
-    M_PROVIDER_AUTO_REVIVE: {"provider": PROVIDER},
+    # 'outcome' makes revive FAILURES visible — a fleet-wide provider breakage
+    # previously looked identical to a healthy fleet. Older daemons omit the
+    # dim (missing dims are legal); their rows read as legacy success-only.
+    M_PROVIDER_AUTO_REVIVE: {"provider": PROVIDER, "outcome": SUCCESS_ERROR},
     M_PROVIDER_OPTIMIZE: {
         "provider": PROVIDER,
         "outcome": frozenset({"success", "error"}),
@@ -404,6 +589,33 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_BRIDGE_TTFT: {
         "transport": BRIDGE_TRANSPORT,
         "le": _le_labels_for(M_BRIDGE_TTFT),
+    },
+    M_PAIRED_HOST_TTFT: {
+        "provider": PROVIDER,
+        "transport": TRANSPORT,
+        "state": frozenset({"cold", "hot"}),
+        "le": _le_labels_for(M_PAIRED_HOST_TTFT),
+    },
+    M_CTX_FORMULA_FIT: {
+        "provider": PROVIDER,
+        "family": LOCAL_MODEL_FAMILY,
+        "size": MODEL_SIZE_BUCKET,
+        "le": _le_labels_for(M_CTX_FORMULA_FIT),
+    },
+    M_CTX_HW_FIT: {
+        "gpu_vendor": GPU_VENDOR,
+        "tier": TIER,
+        "le": _le_labels_for(M_CTX_HW_FIT),
+    },
+    M_CTX_CLAMP: {
+        "provider": PROVIDER,
+        "gpu_vendor": GPU_VENDOR,
+        "tier": TIER,
+    },
+    M_CTX_PREFILL_SPEED: {
+        "provider": PROVIDER,
+        "tier": TIER,
+        "le": _le_labels_for(M_CTX_PREFILL_SPEED),
     },
 }
 
@@ -427,6 +639,7 @@ BACKEND_OPS_METRICS = frozenset(
         M_INFRA_S3_OP,
         M_INFRA_PUSH,
         M_INFRA_RATE_LIMIT_REJECT,
+        M_INFRA_RATE_LIMIT_FALLBACK,
         M_INFRA_EXA_QUOTA_BREACH,
         M_AUTH_OTP,
         M_AUTH_TOKEN_REFRESH,
@@ -434,6 +647,11 @@ BACKEND_OPS_METRICS = frozenset(
         M_PAIR_FINALIZE,
         M_ABUSE_ENFORCEMENT,
         M_CHAT_CLOUD_MODEL,
+        M_INFRA_HTTP_5XX,
+        M_BILLING_WEBHOOK,
+        M_BILLING_CREDIT_SETTLE,
+        M_CHAT_PROVIDER_ERROR,
+        M_CHAT_STREAM_TERMINAL,
     }
 )
 
@@ -466,6 +684,8 @@ FLUTTER_REPORTABLE_METRICS = (
             M_ONBOARDING_MK_TRANSFER,
             M_LOCAL_THROUGHPUT,
             M_SYNC_OPERATION,
+            M_APP_CRASH,
+            M_PAIRED_TTFT,
         }
     )
     | _SHARED_DEVICE_METRICS
@@ -491,6 +711,11 @@ DAEMON_REPORTABLE_METRICS = (
             M_CRYPTO_E2EE_HANDSHAKE,
             M_BRIDGE_REQUEST,
             M_BRIDGE_TTFT,
+            M_PAIRED_HOST_TTFT,
+            M_CTX_FORMULA_FIT,
+            M_CTX_HW_FIT,
+            M_CTX_CLAMP,
+            M_CTX_PREFILL_SPEED,
         }
     )
     | _SHARED_DEVICE_METRICS
@@ -574,8 +799,30 @@ def cloud_model_family(model_id: str | None) -> str:
     return "other"
 
 
-def is_histogram(metric: str) -> bool:
-    return metric in METRIC_BUCKETS
+_ROUTE_GROUP_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("/v1/auth", "auth"),
+    ("/v1/chat", "chat"),
+    ("/v1/sync", "sync"),
+    ("/v1/billing", "billing"),
+    ("/v1/pairing", "pairing"),
+    ("/v1/models", "models"),
+    ("/v1/p2p", "p2p"),
+    ("/v1/metrics", "metrics"),
+    ("/webhooks", "webhooks"),
+    ("/ops", "ops"),
+)
+
+
+def http_route_group(path: str | None) -> str:
+    """Map a request path to its bounded ROUTE_GROUP value ('other' fallback).
+
+    Never returns the raw path — the dim must stay a bounded enum.
+    """
+    p = str(path or "")
+    for prefix, group in _ROUTE_GROUP_PREFIXES:
+        if p.startswith(prefix):
+            return group
+    return "other"
 
 
 def histogram_le(value: float, metric: str) -> str:
