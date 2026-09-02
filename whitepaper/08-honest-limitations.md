@@ -10,6 +10,14 @@ An installed app is code you obtained once and can pin. A web app is code the se
 
 On desktop and mobile, conversations, attachments and the search index are stored unencrypted on your device. The device is inside the trust boundary: Olace's encryption exists to protect you from the cloud (us included), not from someone holding your unlocked hardware. Full-disk encryption (FileVault, BitLocker, LUKS, Android FBE, iOS Data Protection) is the correct layer for a stolen device, and layering app-level crypto on top would add key-management failure modes for little real gain. Web is the exception (content there is encrypted in IndexedDB) precisely because the browser's storage is the least trustworthy of the platforms.
 
+## We run the key directory, and keys are not yet pinned
+
+When two of your devices pair, each learns the other's public key from our backend. Encryption then protects the session from us, from a database breach, and from the network. What it does not yet protect against is a backend that was compromised or coerced at the moment of pairing and served each device a key it controls, because neither device has a prior key to compare against and no fingerprint is shown for you to check. A server that only records traffic gains nothing; the attack has to be live, at pairing time, and leaves a substituted key on both devices.
+
+This is the model most end-to-end encrypted messengers ship with, and we chose the same starting point on purpose: pinning that refuses a changed key would break every pair on an app reinstall, which is the one moment users must not be locked out. The planned design keeps pairs working and makes substitution visible instead of silent: each device remembers the first key it saw for a pair, shows a one-time "security key changed" notice on both devices when it differs (normal after a reinstall, alarming otherwise), and shows a short fingerprint on the pairing screen for anyone who wants to compare. Until that ships, this page is the disclosure.
+
+Two smaller facts belong next to it. Frames share one key in both directions, so a relay can bounce a device's own frame back at it and end the session; that is a denial of service, not a read, and direction binding is scheduled for the next wire version. And the desktop identity key is readable by any process running as your own user on that machine, through the daemon's loopback API; the keystore wrapping protects it from other users and from offline copies, not from same-user malware, which the "compromised device" section already concedes.
+
 ## Number-match verification depends on the human
 
 The MK transfer and pairing SAS flow is only as strong as the person comparing the numbers. Someone who taps a number without looking at the other screen waives the man-in-the-middle protection. The AAD binding limits the damage of a lucky collision, but attention is part of the protocol.
