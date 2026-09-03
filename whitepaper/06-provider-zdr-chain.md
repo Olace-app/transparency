@@ -1,6 +1,6 @@
 # 6. Cloud inference and the zero-data-retention chain
 
-Olace's first-party cloud route runs on OpenRouter. Privacy on that route is not a settings page we hope stays checked; it is pinned in code on every request.
+Olace's first-party cloud route runs on OpenRouter. Privacy on that route is enforced in code on every request rather than by account configuration.
 
 ## The per-request pin
 
@@ -12,15 +12,15 @@ OPENROUTER_PROVIDER_PIN = MappingProxyType({"zdr": True, "data_collection": "den
 
 `zdr: true` restricts routing to endpoints under OpenRouter's zero-data-retention policy; `data_collection: "deny"` excludes providers that would retain or train on prompts. The pin is applied to chat, tool-calling, research and utility calls alike. There is no code path that sends a first-party cloud request without it.
 
-## Honest scope of the claim
+## Scope of the guarantee
 
-What Olace enforces: the constraint is attached to every request, and OpenRouter routes only to endpoints that accept it. What Olace cannot enforce: the provider's actual server behavior. Retention on those machines is governed by OpenRouter's ZDR contracts with its providers, not by our infrastructure. We state it this way because that is what the code can and cannot prove. OpenRouter's policy: https://openrouter.ai/docs/guides/features/zdr
+What Olace enforces: the constraint is attached to every request, and OpenRouter routes only to endpoints that accept it. What Olace cannot enforce: the provider's actual server behavior. Retention on those machines is governed by OpenRouter's ZDR contracts with its providers, not by Olace's infrastructure. The claim is stated at the boundary of what the code can demonstrate. OpenRouter's policy: https://openrouter.ai/docs/guides/features/zdr
 
 The backend itself does not log prompts or completions on this route, and does not persist them; conversation content is stored server-side only as `zk1` ciphertext written by your device, and only when cloud backup is on (see [02](02-what-the-server-stores.md)).
 
 ## Bring your own key
 
-BYOK inference requests go from your device straight to the provider over HTTPS; your API key lives in your device's secure storage and is never sent to Olace. What that provider retains is between you and them; Olace adds no curation layer and claims none. Features a BYOK provider does not cover (search tools, the cloud vision bridge) run on the first-party route with everything this section describes.
+BYOK inference requests go from your device straight to the provider over HTTPS; your API key lives in your device's secure storage and is never sent to Olace. What that provider retains is governed by your agreement with them; Olace adds no intermediary layer and makes no claim about it. Features a BYOK provider does not cover (search tools, the cloud vision bridge) run on the first-party route with everything this section describes.
 
 ## Search and weather
 

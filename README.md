@@ -10,12 +10,12 @@ The claim in one sentence: **the cryptographic core that protects your data is o
 2. [What the server stores](whitepaper/02-what-the-server-stores.md)
 3. [Zero-knowledge cloud backups](whitepaper/03-zero-knowledge-backups.md)
 4. [End-to-end encrypted device pairing](whitepaper/04-e2ee-pairing.md)
-5. [Operator metrics without surveillance](whitepaper/05-metrics-privacy.md)
+5. [Privacy-preserving operator metrics](whitepaper/05-metrics-privacy.md)
 6. [Cloud inference and the zero-data-retention chain](whitepaper/06-provider-zdr-chain.md)
 7. [Retention and deletion](whitepaper/07-retention.md)
-8. [Honest limitations](whitepaper/08-honest-limitations.md)
+8. [Known limitations](whitepaper/08-known-limitations.md)
 
-Section 8 is not an afterthought. If you read one section as a skeptic, read that one.
+Section 8 lists the boundaries of the design, including the deliberate trade-offs and the work that is planned.
 
 ## The open crypto core
 
@@ -30,7 +30,7 @@ Section 8 is not an afterthought. If you read one section as a skeptic, read tha
 
 ## Metrics catalog
 
-[metrics/](metrics/) holds verbatim copies of the metric catalogs from all three codebases plus `check_sync.py`, which verifies every daemon and app metric name appears byte-identical in the backend catalog. Every metric dimension is a bounded enum; there is no field in the pipeline that could carry an identifier or content. The private repos byte-diff their live catalogs against these copies in their own checks.
+[metrics/](metrics/) holds verbatim copies of the metric catalogs from all three codebases plus `check_sync.py`, which verifies every daemon and app metric name appears byte-identical in the backend catalog. Every metric dimension is a bounded enum; no field in the pipeline can carry an identifier or content. The private repos byte-diff their live catalogs against these copies in their own checks.
 
 ## Reference
 
@@ -38,7 +38,7 @@ Section 8 is not an afterthought. If you read one section as a skeptic, read tha
 
 ## Reporting a vulnerability
 
-See [SECURITY.md](SECURITY.md). Short version: security@olace.app, coordinated disclosure, good-faith research is welcome.
+See [SECURITY.md](SECURITY.md). In short: security@olace.app, coordinated disclosure, and good-faith research is welcome.
 
 ## Licenses
 

@@ -17,7 +17,7 @@ per-object data keys ──AES-256-GCM──► zk1 envelopes
 ```
 
 - **Master Key**: generated on your device (`ZkCrypto.generateKeys`, [src/zk_crypto.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/zk_crypto.dart)). Stored in the OS keystore on desktop and mobile; memory-only per session on web.
-- **Recovery Key**: 16 random bytes formatted as `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-X` ([src/recovery_key.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/recovery_key.dart)). It wraps the MK; the server stores only the wrapped result. Lose the Recovery Key and every unlock method, and your backups are unrecoverable. That is the design, not a bug.
+- **Recovery Key**: 16 random bytes formatted as `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-X` ([src/recovery_key.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/recovery_key.dart)). It wraps the MK; the server stores only the wrapped result. Without the Recovery Key and every other unlock method, backups cannot be recovered, by Olace or by anyone else. This is by design; see [08](08-known-limitations.md).
 - **Per-purpose data keys**: every object class and id gets its own key via the purpose string (`conv|<userId>|<conversationId>`, `proj|...`, `rctx|...`, `instr|...`, `byok_vault|...`, `media|<userId>|<attachmentId>`). No two objects share an AES key, and the purpose doubles as GCM AAD, so a ciphertext cannot be replayed in another context.
 
 ## The zk1 envelope
@@ -35,16 +35,16 @@ A PIN is convenient but low-entropy (a 4 to 6 digit PIN has about 13 to 20 bits)
 3. **Server**: `hardened = HMAC-SHA256(pepper[kid], blind || userId)`. The pepper lives in a versioned keyring provided by environment secret (`PIN_VAULT_PEPPER_KEYRING_JSON`), never in the database. The endpoint is read-only and rate limited per minute, hour and day; wrong attempts decrement a counter that locks the vault.
 4. **Device**: `vault_key = HKDF-SHA256(pin_key, salt=hardened, info="olace-pin-vault-key-v2")`. The vault key decrypts the Recovery Key envelope; an auth tag derived from the vault key is stored server-side only as its SHA-256 hash.
 
-Result: cracking the vault offline requires the database AND the pepper AND an Argon2id search per guess. A database-only attacker cannot even test a guess.
+Result: cracking the vault offline requires the database AND the pepper AND an Argon2id search per guess. An attacker with only the database cannot test a single guess.
 
 ## Web sessions
 
-On web, the MK lives only in browser memory for the session. "Trust this browser" persists a wrapped MK under a non-extractable WebCrypto key in IndexedDB; the raw MK is never written to browser storage of any kind. See [08](08-honest-limitations.md) for why web is the weakest platform regardless.
+On web, the MK lives only in browser memory for the session. "Trust this browser" persists a wrapped MK under a non-extractable WebCrypto key in IndexedDB; the raw MK is never written to browser storage of any kind. See [08](08-known-limitations.md) for the web platform's trust model.
 
 ## Device-to-device Master Key transfer
 
 Signing in on a new device can fetch the MK from an existing device instead of typing the Recovery Key ([src/mk_transfer_crypto.dart](https://github.com/Olace-app/olace-crypto-dart/blob/main/lib/src/mk_transfer_crypto.dart)):
 
 - Ephemeral X25519 exchange; transfer key via HKDF-SHA256 (salt `olace-mk-transfer-v1`, info bound to the transfer id).
-- Both devices independently derive a 5-option number challenge from the transcript (salt `olace-mk-sas-v1`). You confirm by tapping the same 3-digit number on both screens. A machine in the middle that substituted a key produces different numbers on each side, and the transfer dies before any ciphertext exists.
+- Both devices independently derive a 5-option number challenge from the transcript (salt `olace-mk-sas-v1`). You confirm by tapping the same 3-digit number on both screens. A machine in the middle that substituted a key produces different numbers on each side, and the transfer is abandoned before any ciphertext exists.
 - The confirmed number is folded into the GCM AAD (`mk-transfer-v2|<transferId>|sas=<sas>`), so even a lucky guess cannot decrypt the envelope.

@@ -1,6 +1,6 @@
 # 2. What the server stores
 
-Everything the Olace backend persists, by data class. "Server can read" means the running service holds a key or code path that yields plaintext. Since migration `0057_zero_knowledge_only` the backup tables carry a database CHECK constraint (`enc_mode = 'zk1'`) and the write layer rejects anything else, so "no" below is enforced by row shape, not just by code review.
+Everything the Olace backend persists, by data class. "Server can read" means the running service holds a key or code path that yields plaintext. Since migration `0057_zero_knowledge_only` the backup tables carry a database CHECK constraint (`enc_mode = 'zk1'`) and the write layer rejects anything else, so "no" below is enforced by row shape as well as by code.
 
 | Data class | At rest | Server can read? | Notes |
 |---|---|---|---|
@@ -14,11 +14,11 @@ Everything the Olace backend persists, by data class. "Server can read" means th
 | Wrapped Master Key (`user_encryption_keys.wrapped_mk`) | AES-256-GCM under a key derived from your Recovery Key | **No** | The Recovery Key exists only on paper and in your devices. |
 | PIN vault (`pin_vault`) | Encrypted Recovery Key, Argon2 salt and params, a SHA-256 hash of the auth tag, pepper key id, attempt counter | **No** | The vault key requires the PIN, and its derivation includes a pepper held outside the database. See [03](03-zero-knowledge-backups.md). |
 | Text size metadata (`text_size_bytes`) | Integer | **Yes** | Used for quota accounting. Sizes leak how much you write, not what you write. |
-| Settings profile (`user_sync_profiles.profile_enc`) | Encrypted server-side with a server-held key | **Yes, by design** | App settings and sync bookkeeping, not conversation content. Server-side encryption here protects against database exposure, not against Olace. Documented as the deliberate exception it is. |
+| Settings profile (`user_sync_profiles.profile_enc`) | Encrypted server-side with a server-held key | **Yes, by design** | App settings and sync bookkeeping, not conversation content. Server-side encryption here protects against database exposure, not against Olace; this is the one deliberate exception. |
 | Account identity (phone number, email) | Encrypted server-side with a server-held key | **Yes, by design** | Needed to sign you in, send OTPs, and meet legal obligations. Never placed in the zero-knowledge profile blob. |
 | Device records, pairings, presence | Rows with HMAC-canonicalized device ids (`didv1_...`, see [reference/device_id.py](../reference/device_id.py)) | **Yes** | Raw hardware identifiers are never stored; the HMAC form is not reversible to the OS id. |
 | Notification queue (`notification_queue.payload_json`) | Plaintext JSON with a per-row expiry | **Yes** | Delivery scaffolding for offline devices (for example a sign-in approval prompt). Carries event data, never conversation content. Rows expire and are swept. |
-| Feedback and bug reports (`feedback_submissions`) | Plaintext | **Yes, intentionally** | You are writing TO support. The compose screen is explicit about this. |
+| Feedback and bug reports (`feedback_submissions`) | Plaintext | **Yes, intentionally** | These are messages addressed to support, and the compose screen says so. |
 | Push tokens | Platform push tokens | **Yes** | Required to deliver push notifications; deleted with the device record. |
 | Billing and entitlements | Plan, credit ledger, payment-processor references | **Yes** | Payment card data never touches Olace; it stays with the merchant of record. |
 | Operator metrics (`metric_rollup`) | Aggregate counters with bounded enum dimensions | **Yes** | Cannot contain identifiers or content by construction. See [05](05-metrics-privacy.md). |
@@ -28,7 +28,7 @@ Everything the Olace backend persists, by data class. "Server can read" means th
 - No plaintext conversation or message table. Content exists server-side only as `zk1` ciphertext, and only if you enabled cloud backup.
 - No server-side decryption path for backups. The legacy mode that allowed it was removed (code and schema) before launch; the CHECK constraints above are the durable record of that removal.
 - No prompt or completion logging on the cloud inference route. Requests are relayed to the provider with zero-data-retention pinned per request (see [06](06-provider-zdr-chain.md)).
-- No raw device identifiers and no raw IP addresses in application tables. One qualifier so this claim survives a code read: sign-in approval challenges store a one-way hash of the requesting IP (`login_approval_challenges.request_ip_hash`), used to tell you whether an approval request resembles earlier ones from the same network. The row expires with the challenge and the hash is not reversible to an address.
+- No raw device identifiers and no raw IP addresses in application tables. One qualifier: sign-in approval challenges store a one-way hash of the requesting IP (`login_approval_challenges.request_ip_hash`), used to tell you whether an approval request resembles earlier ones from the same network. The row expires with the challenge and the hash is not reversible to an address.
 
 ## Chat traffic (not storage)
 

@@ -1,6 +1,6 @@
 # 7. Retention and deletion
 
-What the server keeps, for how long, and what deletion actually does. Local copies on your devices are yours and are never touched by server-side retention.
+What the server keeps, for how long, and what deletion does. Local copies on your devices are yours and are never touched by server-side retention.
 
 ## Encrypted cloud backups
 
