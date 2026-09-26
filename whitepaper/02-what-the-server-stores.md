@@ -32,4 +32,12 @@ Everything the Olace backend persists, by data class. "Server can read" means th
 
 ## Chat traffic (not storage)
 
-Chat requests to your own hardware run locally or device-to-device encrypted. One disclosed exception: when a local or paired conversation invokes a feature the backend provides (web search tools, the cloud vision bridge), the context needed for that feature is handed to the backend for the duration of the request, exactly as a cloud-routed chat would be. Maximum Privacy (Direct Mode) conversations never do this. Cloud-routed chat passes through the backend in TLS-protected transport and is orchestrated in memory; it is not written to conversation storage server-side. Cloud backup, when enabled, is written by your device as `zk1` ciphertext through the sync API.
+Chat requests to your own hardware run locally or device-to-device encrypted. When a local or paired conversation invokes a tool the backend provides, the backend coordinates the tool loop but receives user-authored content only as opaque placeholders (`⟦olace:v1:<nonce>:<slot>⟧`), which are expanded on the device immediately before inference. What crosses is the input the tool itself needs, the same input any provider of that service would require:
+
+- search queries, and for Research a planning brief, both written by the model on the device; tool arguments are never filled from the raw user message on this path;
+- links to read, including URLs from the conversation when the model opens them;
+- a city, or a place category and area, for weather and places;
+- an attached image, only when the user has chosen a cloud model for vision;
+- message lengths and an unsalted one-way digest of the normalized message, used to match cached search results.
+
+The conversation itself is not sent to the backend or to the tool provider in readable form. Python the model writes runs in the sandbox on the user's own computer; the backend receives neither the code nor its output. If redaction fails, the turn fails rather than falling back to plaintext. Maximum Privacy (Direct Mode) conversations use none of these backend tools. Bring-your-own-key turns are not redacted: the backend orchestrates them in plaintext, in memory, as it does a cloud-routed chat. Cloud-routed chat passes through the backend in TLS-protected transport and is orchestrated in memory; it is not written to conversation storage server-side. Cloud backup, when enabled, is written by your device as `zk1` ciphertext through the sync API.
