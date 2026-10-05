@@ -30,6 +30,10 @@ The server necessarily sees that devices exist, when they are online, when sessi
 
 Zero-knowledge means there is no recovery desk. A user who loses the Recovery Key, the PIN, and every signed-in device cannot recover their cloud backups, and neither can Olace. Setup states this before backup is enabled. The property is kept deliberately: a recovery path for the user would be a recovery path for Olace and for anyone who could compel it.
 
+## A Sync PIN is guessable by whoever holds both halves
+
+A 6-digit PIN has a million possible values. The vault keeps a database dump useless on its own, because every guess also needs the pepper, which lives outside the database, and the online endpoints lock after ten wrong attempts. A party holding both the database and the pepper, which is Olace itself or someone able to compel it or take over the running service, could still try every PIN for one account offline. It would be a deliberate, per-account search, not access to stored data in bulk. Setting up sync without a PIN removes this path: a Recovery Key cannot be guessed, and a trusted device hands the key over only after a number match the user confirms.
+
 ## Binaries are not yet reproducible
 
 The crypto code and the vectors are public, but the shipped binaries cannot yet be rebuilt bit-for-bit to prove they contain exactly that code. Reproducible builds are a stated goal, not a current property. Until then, the open core plus dependency pinning is the verification boundary.
