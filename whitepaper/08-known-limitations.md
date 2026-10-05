@@ -1,6 +1,6 @@
 # 8. Known limitations
 
-This section lists the boundaries of Olace's design: the properties it does not provide, the trade-offs made deliberately, and the work that is planned. It is part of the specification, not an appendix.
+This section lists the boundaries of Olace's design: the properties it does not provide and the trade-offs made deliberately. It is part of the specification, not an appendix.
 
 ## The web app has a weaker trust model
 
@@ -12,15 +12,15 @@ On desktop and mobile, conversations, attachments and the search index are store
 
 ## Key directory trust during pairing
 
-When two devices pair, each learns the other's public key from the Olace backend. The session is then protected from Olace, from a database breach, and from the network. What it does not yet cover is a backend that was compromised or coerced at the moment of pairing and served each device a key it controls, because neither device has a prior key to compare against and no fingerprint is shown for the user to check. A server that only records traffic gains nothing; the attack has to be live, at pairing time, and leaves a substituted key on both devices.
+When two devices pair, each learns the other's public key from the Olace backend. The session is then protected from Olace, from a database breach, and from the network. Each device pins the first key that completes a verified handshake for the pair. What the pin does not cover on its own is a backend that was compromised or coerced at the moment of pairing and served each device a key it controls, because neither device has a prior key to compare against, so the substituted key becomes the pin. A server that only records traffic gains nothing; the attack has to be live, at pairing time, and leaves a substituted key on both devices. Pairing by scanning the host's QR code checks the first key against the fingerprint the code carries, and comparing the pair's 40-digit security code on both devices reveals a substitution at any time (see [04](04-e2ee-pairing.md)). A pair made with a typed code, whose security code nobody compares, has no such check.
 
-This is the model most end-to-end encrypted messengers ship with, and Olace starts from the same point: pinning that refuses a changed key would break every pair on an app reinstall, which is the one moment users must not be locked out. The planned design keeps pairs working and makes substitution visible: each device remembers the first key it saw for a pair, shows a one-time "security key changed" notice on both devices when it differs (expected after a reinstall, worth attention otherwise), and shows a short fingerprint on the pairing screen for anyone who wants to compare. Until that ships, this section is the disclosure.
+This is the model most end-to-end encrypted messengers ship with. The pin is soft: a key that differs from the pinned one is accepted, and the device shows a "has a new security key" notice instead of refusing the connection, because pinning that refuses a changed key would break every pair on an app reinstall, which is the one moment users must not be locked out. A substitution after the first connection is therefore visible, not blocked. The notice clears when dismissed or after 14 days, a change back to a key the device already saw for the pair raises no new notice, and a new pair the backend creates starts from a fresh first use with no notice. The device names shown in pairing come from the backend.
 
-Two related details. Frames share one key in both directions, so a relay can return a device's own frame to it and end the session; that is a denial of service, not a read, and direction binding is scheduled for the next wire version. And the desktop identity key is readable by any process running as the same OS user on that machine, through the daemon's loopback API; the keystore wrapping protects it from other users and from offline copies of the disk, not from same-user malware, which the compromised-device case in [01](01-threat-model.md) already covers.
+Two related details. Frames share one key in both directions, so a relay can return a device's own frame to it and end the session; that is a denial of service, not a read, and the wire format has no direction binding. And the desktop identity key is readable by any process running as the same OS user on that machine, through the daemon's loopback API; the keystore wrapping protects it from other users and from offline copies of the disk, not from same-user malware, which the compromised-device case in [01](01-threat-model.md) already covers.
 
 ## Number-match verification depends on the user
 
-The Master Key transfer and pairing SAS flow is only as strong as the comparison the user makes. Confirming a number without checking the other screen forgoes the man-in-the-middle protection. The AAD binding limits the damage of a lucky collision, but the comparison is part of the protocol.
+Master Key transfer, and sign-in approval with a key bundle, are only as strong as the tap the user makes. The new device shows one 3-digit number; the device holding the key shows its own number among four decoys, checks the user's tap itself, and releases the key only when the tap matches its own number. A wrong tap ends the transfer. Under a key substitution the two numbers differ, so the protection holds when the user taps the number the new device shows. A user who picks a number without reading the new device's screen picks the key holder's number one time in five and forgoes the man-in-the-middle protection that time. The AAD binding limits the damage of a lucky collision, but the comparison is part of the protocol. The same holds for the pair security code in [04](04-e2ee-pairing.md): it protects only when someone compares it.
 
 ## Encryption does not hide metadata
 
@@ -34,9 +34,9 @@ Zero-knowledge means there is no recovery desk. A user who loses the Recovery Ke
 
 A 6-digit PIN has a million possible values. The vault keeps a database dump useless on its own, because every guess also needs the pepper, which lives outside the database, and the online endpoints lock after ten wrong attempts. A party holding both the database and the pepper, which is Olace itself or someone able to compel it or take over the running service, could still try every PIN for one account offline. It would be a deliberate, per-account search, not access to stored data in bulk. Setting up sync without a PIN removes this path: a Recovery Key cannot be guessed, and a trusted device hands the key over only after a number match the user confirms.
 
-## Binaries are not yet reproducible
+## Binaries are not reproducible
 
-The crypto code and the vectors are public, but the shipped binaries cannot yet be rebuilt bit-for-bit to prove they contain exactly that code. Reproducible builds are a stated goal, not a current property. Until then, the open core plus dependency pinning is the verification boundary.
+The crypto code and the vectors are public, but the shipped binaries cannot be rebuilt bit-for-bit to prove they contain exactly that code. Builds are not reproducible today. The open core plus dependency pinning is the verification boundary.
 
 ## Development fallbacks
 
