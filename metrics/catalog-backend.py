@@ -82,6 +82,8 @@ M_SYNC_OPERATION = "sync.operation"
 M_LOOP_GUARD_TRIP = "local.loop_guard_trip"
 M_APP_CRASH = "app.crash"
 M_PAIRED_TTFT = "paired.ttft"
+M_ONBOARDING_STEP = "onboarding.step"
+M_BILLING_CHECKOUT = "billing.checkout"
 
 M_RELAY_TTFT = "relay.ttft"
 M_RELAY_TTFT_FIRST = "relay.ttft_first"
@@ -270,6 +272,11 @@ BLOCK_TYPE = frozenset(
 SUCCESS_ERROR = frozenset({"success", "error"})
 
 APP_CRASH_FAULT = frozenset({"widget", "async"})
+ONBOARDING_STEP = frozenset({"sign_in", "local_mode", "trial", "sync", "pair", "done"})
+ONBOARDING_EVENT = frozenset({"shown", "completed", "skipped", "resumed"})
+CHECKOUT_OUTCOME = frozenset(
+    {"opened", "launched", "completed", "pending", "cancelled", "failed", "elsewhere"}
+)
 APP_SURFACE = frozenset({"leader", "subwindow"})
 IMAGE_GEN_OUTCOME = frozenset({"success", "error", "cancelled"})
 ROUTE_GROUP = frozenset(
@@ -430,6 +437,8 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     },
     M_SYNC_OPERATION: {"outcome": SUCCESS_ERROR},
     M_APP_CRASH: {"fault": APP_CRASH_FAULT, "surface": APP_SURFACE},
+    M_ONBOARDING_STEP: {"step": ONBOARDING_STEP, "event": ONBOARDING_EVENT},
+    M_BILLING_CHECKOUT: {"outcome": CHECKOUT_OUTCOME},
     M_PAIRED_TTFT: {
         "provider": PROVIDER,
         "transport": TRANSPORT,
@@ -580,6 +589,8 @@ FLUTTER_REPORTABLE_METRICS = (
             M_SYNC_OPERATION,
             M_APP_CRASH,
             M_PAIRED_TTFT,
+            M_ONBOARDING_STEP,
+            M_BILLING_CHECKOUT,
         }
     )
     | _SHARED_DEVICE_METRICS

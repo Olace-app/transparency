@@ -31,6 +31,9 @@ class MetricNames {
 
   static const String pairedTtft = 'paired.ttft';
 
+  static const String onboardingStep = 'onboarding.step';
+  static const String billingCheckout = 'billing.checkout';
+
   static const String bridgeRequest = 'bridge.request';
   static const String bridgeTtft = 'bridge.ttft';
   static const String pairedHostTtft = 'paired.host_ttft';
@@ -61,6 +64,9 @@ class MetricDims {
   static const String surface = 'surface';
 
   static const String stream = 'stream';
+
+  static const String step = 'step';
+  static const String event = 'event';
 }
 
 class MetricValues {
@@ -161,6 +167,26 @@ class MetricValues {
 
   static const String surfaceLeader = 'leader';
   static const String surfaceSubwindow = 'subwindow';
+
+  static const String stepSignIn = 'sign_in';
+  static const String stepLocalMode = 'local_mode';
+  static const String stepTrial = 'trial';
+  static const String stepSync = 'sync';
+  static const String stepPair = 'pair';
+  static const String stepDone = 'done';
+
+  static const String eventShown = 'shown';
+  static const String eventCompleted = 'completed';
+  static const String eventSkipped = 'skipped';
+  static const String eventResumed = 'resumed';
+
+  static const String checkoutOpened = 'opened';
+  static const String checkoutLaunched = 'launched';
+  static const String checkoutCompleted = 'completed';
+  static const String checkoutPending = 'pending';
+  static const String checkoutCancelled = 'cancelled';
+  static const String checkoutFailed = 'failed';
+  static const String checkoutElsewhere = 'elsewhere';
 }
 
 class MetricBuckets {
