@@ -48,6 +48,7 @@ M_INFRA_RATE_LIMIT_REJECT = "infra.rate_limit_reject"
 M_INFRA_RATE_LIMIT_FALLBACK = "infra.rate_limit_fallback"
 M_INFRA_EXA_QUOTA_BREACH = "infra.exa_quota_breach"
 M_AUTH_OTP = "auth.otp"
+M_AUTH_GOOGLE = "auth.google"
 M_AUTH_TOKEN_REFRESH = "auth.token_refresh"
 M_META_REPORTS_RECEIVED = "meta.reports_received"
 M_PAIR_FINALIZE = "pair.finalize"
@@ -58,6 +59,9 @@ M_BILLING_WEBHOOK = "billing.webhook"
 M_BILLING_CREDIT_SETTLE = "billing.credit_settle"
 M_CHAT_PROVIDER_ERROR = "chat.provider_error"
 M_CHAT_STREAM_TERMINAL = "chat.stream_terminal"
+M_TTS_UNIT = "tts.unit"
+M_TTS_PROVIDER = "tts.provider"
+M_TTS_COST_MICROUSD = "tts.cost_microusd"
 
 M_CHAT_SECURITY_MODE = "chat.security_mode"
 M_CHAT_ROUTE = "chat.route"
@@ -84,6 +88,9 @@ M_APP_CRASH = "app.crash"
 M_PAIRED_TTFT = "paired.ttft"
 M_ONBOARDING_STEP = "onboarding.step"
 M_BILLING_CHECKOUT = "billing.checkout"
+M_APP_UPDATE = "app.update"
+M_DAEMON_DEPLOY = "daemon.deploy"
+M_LOCAL_SETUP = "local.setup"
 
 M_RELAY_TTFT = "relay.ttft"
 M_RELAY_TTFT_FIRST = "relay.ttft_first"
@@ -210,6 +217,7 @@ TOOL = frozenset(
     {
         "web_search",
         "image_search",
+        "show_photos",
         "get_weather",
         "find_places",
         "extract_page",
@@ -245,6 +253,7 @@ LIMITER = frozenset(
         "openrouter_image",
         "openrouter_utility",
         "openrouter_reader",
+        "openrouter_speech",
         "chat_fair_use_burst",
         "content_pack_invalidate",
         "refresh",
@@ -257,6 +266,7 @@ LIMITER = frozenset(
         "sync",
         "pairing",
         "text",
+        "tts",
     }
 )
 CLASSIFY_DECISION = frozenset({"direct", "need_tool", "cutoff", "done"})
@@ -272,7 +282,7 @@ BLOCK_TYPE = frozenset(
 SUCCESS_ERROR = frozenset({"success", "error"})
 
 APP_CRASH_FAULT = frozenset({"widget", "async"})
-ONBOARDING_STEP = frozenset({"sign_in", "local_mode", "trial", "sync", "pair", "done"})
+ONBOARDING_STEP = frozenset({"sign_in", "trial", "sync", "pair", "done"})
 ONBOARDING_EVENT = frozenset({"shown", "completed", "skipped", "resumed"})
 CHECKOUT_OUTCOME = frozenset(
     {"opened", "launched", "completed", "pending", "cancelled", "failed", "elsewhere"}
@@ -299,6 +309,23 @@ WEBHOOK_OUTCOME = frozenset({"ok", "invalid_signature", "error", "ignored"})
 PROVIDER_ERROR_CLASS = frozenset({"rate_limited", "service_unavailable", "other"})
 STREAM_TERMINAL = frozenset({"done", "client_disconnect", "error", "refused"})
 TURN_OUTCOME = frozenset({"completed", "error", "cancelled"})
+TURN_ERROR_KIND = frozenset(
+    {
+        "limit", "outdated", "auth", "model_missing", "memory", "context",
+        "model_output", "unreachable", "connection", "runtime_error",
+        "provider", "other",
+    }
+)
+APP_UPDATE_STEP = frozenset({"download", "install"})
+APP_UPDATE_OUTCOME = frozenset(
+    {"ok", "failed", "verify_failed", "disk_space", "cancelled", "not_newer"}
+)
+DAEMON_DEPLOY_TRIGGER = frozenset({"upgrade", "outdated"})
+DAEMON_DEPLOY_OUTCOME = frozenset({"ok", "swap_failed", "health_failed"})
+LOCAL_SETUP_STEP = frozenset(
+    {"start", "runtime", "server", "model", "verify", "done", "first_reply"}
+)
+LOCAL_SETUP_OUTCOME = frozenset({"started", "ok", "failed", "cancelled"})
 PAIR_OUTCOME = frozenset({"success", "stale", "self_pair", "error", "plan_limit", "invalid"})
 ABUSE_ACTION = frozenset({"flagged", "suspended"})
 MODEL_FAMILY = frozenset(
@@ -321,6 +348,8 @@ LOCAL_MODEL_FAMILY = frozenset(
 )
 MODEL_SIZE_BUCKET = frozenset({"lt2", "2_4", "4_8", "8plus"})
 GPU_VENDOR = frozenset({"nvidia", "amd", "apple", "intel", "other"})
+TTS_UNIT_OUTCOME = frozenset({"success", "upstream", "timeout"})
+TTS_PROVIDER = frozenset({"deepinfra", "together", "other", "unknown"})
 
 METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_WS_CONNECT: {"kind": frozenset({"chat", "device", "desktop"})},
@@ -348,7 +377,10 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_SEARCH_DIGEST: {
         "kind": frozenset({"card", "page"}),
         "outcome": frozenset(
-            {"success", "fallback", "timeout", "length_retry", "skipped", "queued", "deadline"}
+            {
+                "success", "fallback", "timeout", "length_retry", "skipped", "queued",
+                "deadline", "partial",
+            }
         ),
         "le": _le_labels_for(M_SEARCH_DIGEST),
     },
@@ -376,6 +408,10 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "action": frozenset({"send", "verify"}),
         "outcome": frozenset({"ok", "rejected", "expired", "error"}),
     },
+    M_AUTH_GOOGLE: {
+        "step": frozenset({"start", "callback", "exchange"}),
+        "outcome": frozenset({"ok", "rejected", "error"}),
+    },
     M_AUTH_TOKEN_REFRESH: {"outcome": frozenset({"ok", "rejected", "error"})},
     M_META_REPORTS_RECEIVED: {"source": frozenset({"flutter", "daemon"})},
     M_PAIR_FINALIZE: {"outcome": PAIR_OUTCOME},
@@ -386,6 +422,9 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_BILLING_CREDIT_SETTLE: {"outcome": SUCCESS_ERROR},
     M_CHAT_PROVIDER_ERROR: {"class": PROVIDER_ERROR_CLASS},
     M_CHAT_STREAM_TERMINAL: {"outcome": STREAM_TERMINAL},
+    M_TTS_UNIT: {"outcome": TTS_UNIT_OUTCOME},
+    M_TTS_PROVIDER: {"provider": TTS_PROVIDER},
+    M_TTS_COST_MICROUSD: {"provider": TTS_PROVIDER},
     M_CHAT_SECURITY_MODE: {"mode": SECURITY_MODE},
     M_CHAT_ROUTE: {
         "route": ROUTE,
@@ -426,7 +465,18 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_CHAT_TURN_OUTCOME: {
         "route": ROUTE,
         "outcome": TURN_OUTCOME,
+        "error_kind": TURN_ERROR_KIND,
         "cloud_key": CLOUD_KEY,
+    },
+    M_APP_UPDATE: {"step": APP_UPDATE_STEP, "outcome": APP_UPDATE_OUTCOME},
+    M_DAEMON_DEPLOY: {
+        "trigger": DAEMON_DEPLOY_TRIGGER,
+        "outcome": DAEMON_DEPLOY_OUTCOME,
+    },
+    M_LOCAL_SETUP: {
+        "step": LOCAL_SETUP_STEP,
+        "outcome": LOCAL_SETUP_OUTCOME,
+        "provider": PROVIDER,
     },
     M_CHAT_IMAGE_GENERATION: {"outcome": IMAGE_GEN_OUTCOME, "cloud_key": CLOUD_KEY},
     M_CHAT_IMAGE_INPUT: {"route": ROUTE},
@@ -549,6 +599,7 @@ BACKEND_OPS_METRICS = frozenset(
         M_INFRA_RATE_LIMIT_FALLBACK,
         M_INFRA_EXA_QUOTA_BREACH,
         M_AUTH_OTP,
+        M_AUTH_GOOGLE,
         M_AUTH_TOKEN_REFRESH,
         M_META_REPORTS_RECEIVED,
         M_PAIR_FINALIZE,
@@ -559,6 +610,9 @@ BACKEND_OPS_METRICS = frozenset(
         M_BILLING_CREDIT_SETTLE,
         M_CHAT_PROVIDER_ERROR,
         M_CHAT_STREAM_TERMINAL,
+        M_TTS_UNIT,
+        M_TTS_PROVIDER,
+        M_TTS_COST_MICROUSD,
     }
 )
 
@@ -591,6 +645,9 @@ FLUTTER_REPORTABLE_METRICS = (
             M_PAIRED_TTFT,
             M_ONBOARDING_STEP,
             M_BILLING_CHECKOUT,
+            M_APP_UPDATE,
+            M_DAEMON_DEPLOY,
+            M_LOCAL_SETUP,
         }
     )
     | _SHARED_DEVICE_METRICS

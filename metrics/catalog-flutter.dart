@@ -32,6 +32,9 @@ class MetricNames {
   static const String pairedTtft = 'paired.ttft';
 
   static const String onboardingStep = 'onboarding.step';
+  static const String appUpdate = 'app.update';
+  static const String daemonDeploy = 'daemon.deploy';
+  static const String localSetup = 'local.setup';
   static const String billingCheckout = 'billing.checkout';
 
   static const String bridgeRequest = 'bridge.request';
@@ -47,6 +50,7 @@ class MetricDims {
   static const String transport = 'transport';
   static const String provider = 'provider';
   static const String cloudKey = 'cloud_key';
+  static const String errorKind = 'error_kind';
   static const String variant = 'variant';
   static const String decision = 'decision';
   static const String suppressed = 'suppressed';
@@ -67,6 +71,7 @@ class MetricDims {
 
   static const String step = 'step';
   static const String event = 'event';
+  static const String trigger = 'trigger';
 }
 
 class MetricValues {
@@ -169,7 +174,6 @@ class MetricValues {
   static const String surfaceSubwindow = 'subwindow';
 
   static const String stepSignIn = 'sign_in';
-  static const String stepLocalMode = 'local_mode';
   static const String stepTrial = 'trial';
   static const String stepSync = 'sync';
   static const String stepPair = 'pair';
