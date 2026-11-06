@@ -62,6 +62,8 @@ M_CHAT_STREAM_TERMINAL = "chat.stream_terminal"
 M_TTS_UNIT = "tts.unit"
 M_TTS_PROVIDER = "tts.provider"
 M_TTS_COST_MICROUSD = "tts.cost_microusd"
+M_DOCUMENT_MADE = "document.made"
+M_DOCUMENT_DESIGNED_OFFER = "document.designed_offer"
 
 M_CHAT_SECURITY_MODE = "chat.security_mode"
 M_CHAT_ROUTE = "chat.route"
@@ -285,8 +287,17 @@ APP_CRASH_FAULT = frozenset({"widget", "async"})
 ONBOARDING_STEP = frozenset({"sign_in", "trial", "sync", "pair", "done"})
 ONBOARDING_EVENT = frozenset({"shown", "completed", "skipped", "resumed"})
 CHECKOUT_OUTCOME = frozenset(
-    {"opened", "launched", "completed", "pending", "cancelled", "failed", "elsewhere"}
+    {
+        "opened", "launched", "completed", "pending", "cancelled", "failed", "elsewhere",
+        "minted",
+    }
 )
+CHECKOUT_SOURCE = frozenset({"documents_line", "research_wall", "other"})
+DOCUMENT_KIND = frozenset({"create", "edit"})
+DOCUMENT_FORMAT = frozenset({"pdf", "slides"})
+DOCUMENT_LOOK = frozenset({"designed", "plain"})
+DOCUMENT_LANE = frozenset({"cloud", "byok", "local", "paired"})
+DESIGNED_OFFER_STEP = frozenset({"shown", "tapped", "purchased"})
 APP_SURFACE = frozenset({"leader", "subwindow"})
 IMAGE_GEN_OUTCOME = frozenset({"success", "error", "cancelled"})
 ROUTE_GROUP = frozenset(
@@ -425,6 +436,13 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_TTS_UNIT: {"outcome": TTS_UNIT_OUTCOME},
     M_TTS_PROVIDER: {"provider": TTS_PROVIDER},
     M_TTS_COST_MICROUSD: {"provider": TTS_PROVIDER},
+    M_DOCUMENT_MADE: {
+        "kind": DOCUMENT_KIND,
+        "format": DOCUMENT_FORMAT,
+        "look": DOCUMENT_LOOK,
+        "lane": DOCUMENT_LANE,
+    },
+    M_DOCUMENT_DESIGNED_OFFER: {"step": DESIGNED_OFFER_STEP},
     M_CHAT_SECURITY_MODE: {"mode": SECURITY_MODE},
     M_CHAT_ROUTE: {
         "route": ROUTE,
@@ -488,7 +506,7 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_SYNC_OPERATION: {"outcome": SUCCESS_ERROR},
     M_APP_CRASH: {"fault": APP_CRASH_FAULT, "surface": APP_SURFACE},
     M_ONBOARDING_STEP: {"step": ONBOARDING_STEP, "event": ONBOARDING_EVENT},
-    M_BILLING_CHECKOUT: {"outcome": CHECKOUT_OUTCOME},
+    M_BILLING_CHECKOUT: {"outcome": CHECKOUT_OUTCOME, "source": CHECKOUT_SOURCE},
     M_PAIRED_TTFT: {
         "provider": PROVIDER,
         "transport": TRANSPORT,
@@ -613,6 +631,8 @@ BACKEND_OPS_METRICS = frozenset(
         M_TTS_UNIT,
         M_TTS_PROVIDER,
         M_TTS_COST_MICROUSD,
+        M_DOCUMENT_MADE,
+        M_DOCUMENT_DESIGNED_OFFER,
     }
 )
 
