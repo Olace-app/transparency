@@ -227,9 +227,7 @@ TOOL = frozenset(
         "list_project_files",
         "search_project_files",
         "read_file_chunk",
-        "device_pairing",
-        "model_hub",
-        "setup_local_ai",
+        "olace_settings",
         "olace_help",
         "execute_python",
         "create_document",
@@ -360,7 +358,7 @@ LOCAL_MODEL_FAMILY = frozenset(
 MODEL_SIZE_BUCKET = frozenset({"lt2", "2_4", "4_8", "8plus"})
 GPU_VENDOR = frozenset({"nvidia", "amd", "apple", "intel", "other"})
 TTS_UNIT_OUTCOME = frozenset({"success", "upstream", "timeout"})
-TTS_PROVIDER = frozenset({"deepinfra", "together", "other", "unknown"})
+TTS_PROVIDER = frozenset({"olace", "deepinfra", "together", "other", "unknown"})
 
 METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_WS_CONNECT: {"kind": frozenset({"chat", "device", "desktop"})},
