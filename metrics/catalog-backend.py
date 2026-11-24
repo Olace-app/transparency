@@ -27,26 +27,19 @@ from __future__ import annotations
 import json
 import re
 
-M_WS_CONNECT = "ws.connect"
 M_RELAY_EVENT = "relay.event"
 M_TUNNEL_EVENT = "tunnel.event"
-M_CHAT_CLASSIFY_DECISION = "chat.classify_decision"
 M_CHAT_TOOL_EXECUTION = "chat.tool_execution"
 M_CHAT_TOOL_LATENCY = "chat.tool_latency"
 M_SEARCH_DIGEST = "search.digest"
-M_SEARCH_ALIAS = "search.alias"
 M_OPENROUTER_CACHE = "openrouter.cache"
 M_CHAT_TTFT = "chat.ttft"
-M_CHAT_TTFT_FIRST = "chat.ttft_first"
-M_CHAT_PEEK_HANDOFF_OVERTURN = "chat.peek_handoff_overturn"
-M_CHAT_REACT_FALLBACK = "chat.react_fallback"
 M_CHAT_CONTEXT_OVERFLOW_RETRY = "chat.context_overflow_retry"
 M_INFRA_DB_POOL_WAIT = "infra.db_pool_wait"
 M_INFRA_S3_OP = "infra.s3_op"
 M_INFRA_PUSH = "infra.push"
 M_INFRA_RATE_LIMIT_REJECT = "infra.rate_limit_reject"
 M_INFRA_RATE_LIMIT_FALLBACK = "infra.rate_limit_fallback"
-M_INFRA_EXA_QUOTA_BREACH = "infra.exa_quota_breach"
 M_AUTH_OTP = "auth.otp"
 M_AUTH_GOOGLE = "auth.google"
 M_AUTH_TOKEN_REFRESH = "auth.token_refresh"
@@ -59,30 +52,22 @@ M_BILLING_WEBHOOK = "billing.webhook"
 M_BILLING_CREDIT_SETTLE = "billing.credit_settle"
 M_CHAT_PROVIDER_ERROR = "chat.provider_error"
 M_CHAT_STREAM_TERMINAL = "chat.stream_terminal"
-M_TTS_UNIT = "tts.unit"
-M_TTS_PROVIDER = "tts.provider"
-M_TTS_COST_MICROUSD = "tts.cost_microusd"
 M_DOCUMENT_MADE = "document.made"
 M_DOCUMENT_DESIGNED_OFFER = "document.designed_offer"
 
 M_CHAT_SECURITY_MODE = "chat.security_mode"
-M_CHAT_ROUTE = "chat.route"
 M_CHAT_TRANSPORT_RESOLUTION = "chat.transport_resolution"
 M_PEEK_OUTCOME = "peek.outcome"
 M_PEEK_GUARD_OVERTURN = "peek.guard_overturn"
-M_PEEK_CUTOFF_HANDOFF = "peek.cutoff_handoff"
 M_CTX_TRUNCATION = "ctx.truncation"
 M_CTX_HISTORY_EVICTION = "ctx.history_eviction"
-M_DEVICE_VRAM_DETECTION = "device.vram_detection"
-M_DEVICE_VRAM_TIER = "device.vram_tier"
 M_LOCAL_TTFT = "local.ttft"
-M_LOCAL_TTFT_FIRST = "local.ttft_first"
 M_LOCAL_OOM_RETRY = "local.oom_retry"
 M_NET_SERVICE_RECONNECT = "net.service_reconnect"
 M_CHAT_TURN_OUTCOME = "chat.turn_outcome"
 M_CHAT_IMAGE_GENERATION = "chat.image_generation"
-M_CHAT_IMAGE_INPUT = "chat.image_input"
 M_ONBOARDING_MK_TRANSFER = "onboarding.mk_transfer"
+M_CRYPTO_KEY_RECOVERY = "crypto.key_recovery"
 M_LOCAL_THROUGHPUT = "local.throughput"
 M_SYNC_OPERATION = "sync.operation"
 M_LOOP_GUARD_TRIP = "local.loop_guard_trip"
@@ -94,15 +79,10 @@ M_APP_UPDATE = "app.update"
 M_DAEMON_DEPLOY = "daemon.deploy"
 M_LOCAL_SETUP = "local.setup"
 
-M_RELAY_TTFT = "relay.ttft"
-M_RELAY_TTFT_FIRST = "relay.ttft_first"
 M_RELAY_THROUGHPUT = "relay.throughput"
 M_RELAY_VRAM_RETRY = "relay.vram_retry"
 M_RELAY_WATCHDOG_FIRE = "relay.watchdog_fire"
-M_RELAY_TRANSPORT = "relay.transport"
 M_TUNNEL_RECONNECT = "tunnel.reconnect"
-M_TUNNEL_BACKOFF_DEPTH = "tunnel.backoff_depth"
-M_TUNNEL_HEARTBEAT_STALE_CLOSE = "tunnel.heartbeat_stale_close"
 M_MODEL_PULL = "model.pull"
 M_PROVIDER_AUTO_REVIVE = "provider.auto_revive"
 M_PROVIDER_OPTIMIZE = "provider.optimize"
@@ -114,7 +94,6 @@ M_BRIDGE_TTFT = "bridge.ttft"
 M_PAIRED_HOST_TTFT = "paired.host_ttft"
 M_CTX_FORMULA_FIT = "ctx.formula_fit"
 M_CTX_HW_FIT = "ctx.hw_fit"
-M_CTX_CLAMP = "ctx.clamp"
 M_CTX_PREFILL_SPEED = "ctx.prefill_speed"
 
 DIM_PLATFORM = "platform"
@@ -123,7 +102,6 @@ DIM_DAEMON_VERSION = "daemon_version"
 
 LE_LATENCY_BOUNDS_MS = (200, 500, 1000, 2000, 5000, 10000)
 LE_THROUGHPUT_BOUNDS_TPS = (5, 10, 20, 40, 80)
-LE_BACKOFF_BOUNDS_MS = (2000, 5000, 10000, 20000)
 LE_RATIO_BOUNDS_PCT = (40, 60, 80, 95, 110, 130, 160, 200, 300, 500)
 LE_CACHE_SHARE_BOUNDS_PCT = (0, 10, 25, 50, 75, 90)
 LE_PREFILL_BOUNDS_TPS = (50, 150, 400, 1000, 3000)
@@ -135,7 +113,6 @@ def _labels(bounds: tuple[int, ...]) -> tuple[str, ...]:
 
 LE_LATENCY_LABELS = _labels(LE_LATENCY_BOUNDS_MS)
 LE_THROUGHPUT_LABELS = _labels(LE_THROUGHPUT_BOUNDS_TPS)
-LE_BACKOFF_LABELS = _labels(LE_BACKOFF_BOUNDS_MS)
 LE_RATIO_LABELS = _labels(LE_RATIO_BOUNDS_PCT)
 LE_PREFILL_LABELS = _labels(LE_PREFILL_BOUNDS_TPS)
 LE_CACHE_SHARE_LABELS = _labels(LE_CACHE_SHARE_BOUNDS_PCT)
@@ -145,18 +122,13 @@ METRIC_BUCKETS: dict[str, tuple[int, ...]] = {
     M_SEARCH_DIGEST: LE_LATENCY_BOUNDS_MS,
     M_OPENROUTER_CACHE: LE_CACHE_SHARE_BOUNDS_PCT,
     M_CHAT_TTFT: LE_LATENCY_BOUNDS_MS,
-    M_CHAT_TTFT_FIRST: LE_LATENCY_BOUNDS_MS,
     M_INFRA_DB_POOL_WAIT: LE_LATENCY_BOUNDS_MS,
-    M_RELAY_TTFT: LE_LATENCY_BOUNDS_MS,
-    M_RELAY_TTFT_FIRST: LE_LATENCY_BOUNDS_MS,
     M_LOCAL_TTFT: LE_LATENCY_BOUNDS_MS,
-    M_LOCAL_TTFT_FIRST: LE_LATENCY_BOUNDS_MS,
     M_BRIDGE_TTFT: LE_LATENCY_BOUNDS_MS,
     M_PAIRED_TTFT: LE_LATENCY_BOUNDS_MS,
     M_PAIRED_HOST_TTFT: LE_LATENCY_BOUNDS_MS,
     M_RELAY_THROUGHPUT: LE_THROUGHPUT_BOUNDS_TPS,
     M_LOCAL_THROUGHPUT: LE_THROUGHPUT_BOUNDS_TPS,
-    M_TUNNEL_BACKOFF_DEPTH: LE_BACKOFF_BOUNDS_MS,
     M_CTX_FORMULA_FIT: LE_RATIO_BOUNDS_PCT,
     M_CTX_HW_FIT: LE_RATIO_BOUNDS_PCT,
     M_CTX_PREFILL_SPEED: LE_PREFILL_BOUNDS_TPS,
@@ -212,7 +184,6 @@ BOOL = frozenset({"true", "false"})
 TIER = frozenset(
     {"light", "standard", "performance", "advanced", "power", "pro", "ultra", "unknown"}
 )
-VRAM_DETECTION_SOURCE = frozenset({"daemon", "flutter_fallback", "unknown"})
 LOOP_STREAM = frozenset({"visible", "thought"})
 LOOP_TIER = frozenset({"short", "block", "budget"})
 TOOL = frozenset(
@@ -269,7 +240,6 @@ LIMITER = frozenset(
         "tts",
     }
 )
-CLASSIFY_DECISION = frozenset({"direct", "need_tool", "cutoff", "done"})
 PEEK_DECISION = frozenset(
     {"direct_answer", "need_tool", "tool_directive", "cutoff", "error"}
 )
@@ -280,6 +250,10 @@ BLOCK_TYPE = frozenset(
     {"other_files", "research_files", "attached_files", "project_files", "attachments"}
 )
 SUCCESS_ERROR = frozenset({"success", "error"})
+KEY_RECOVERY_METHOD = frozenset({"pin", "recovery_key"})
+KEY_RECOVERY_REASON = frozenset(
+    {"wrong_pin", "wrong_key", "bad_format", "locked", "rate_limited", "no_vault", "other"}
+)
 
 APP_CRASH_FAULT = frozenset({"widget", "async"})
 ONBOARDING_STEP = frozenset({"sign_in", "trial", "sync", "pair", "done"})
@@ -357,11 +331,8 @@ LOCAL_MODEL_FAMILY = frozenset(
 )
 MODEL_SIZE_BUCKET = frozenset({"lt2", "2_4", "4_8", "8plus"})
 GPU_VENDOR = frozenset({"nvidia", "amd", "apple", "intel", "other"})
-TTS_UNIT_OUTCOME = frozenset({"success", "upstream", "timeout"})
-TTS_PROVIDER = frozenset({"olace", "deepinfra", "together", "other", "unknown"})
 
 METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
-    M_WS_CONNECT: {"kind": frozenset({"chat", "device", "desktop"})},
     M_RELAY_EVENT: {
         "outcome": frozenset(
             {"error", "drop", "timeout", "owner_mismatch", "congestion"}
@@ -372,13 +343,11 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
             {"stale", "lease_conflict", "displaced", "receive_timeout", "lease_steal"}
         )
     },
-    M_CHAT_CLASSIFY_DECISION: {"decision": CLASSIFY_DECISION, "route": ROUTE},
     M_CHAT_TOOL_EXECUTION: {
         "tool": TOOL,
         "outcome": frozenset({"success", "error", "empty", "timeout"}),
     },
     M_CHAT_TOOL_LATENCY: {"tool": TOOL, "le": _le_labels_for(M_CHAT_TOOL_LATENCY)},
-    M_SEARCH_ALIAS: {"outcome": frozenset({"generated", "hit"})},
     M_OPENROUTER_CACHE: {
         "outcome": frozenset({"hit", "miss", "unknown"}),
         "le": _le_labels_for(M_OPENROUTER_CACHE),
@@ -394,9 +363,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "le": _le_labels_for(M_SEARCH_DIGEST),
     },
     M_CHAT_TTFT: {"route": ROUTE, "le": _le_labels_for(M_CHAT_TTFT)},
-    M_CHAT_TTFT_FIRST: {"route": ROUTE, "le": _le_labels_for(M_CHAT_TTFT_FIRST)},
-    M_CHAT_PEEK_HANDOFF_OVERTURN: {},
-    M_CHAT_REACT_FALLBACK: {},
     M_CHAT_CONTEXT_OVERFLOW_RETRY: {
         "path": frozenset({"direct_reply", "agent", "deep_research"})
     },
@@ -411,9 +377,8 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     },
     M_INFRA_RATE_LIMIT_REJECT: {"limiter": LIMITER},
     M_INFRA_RATE_LIMIT_FALLBACK: {"limiter": LIMITER},
-    M_INFRA_EXA_QUOTA_BREACH: {},
     M_AUTH_OTP: {
-        "channel": frozenset({"sms", "email"}),
+        "channel": frozenset({"email"}),
         "action": frozenset({"send", "verify"}),
         "outcome": frozenset({"ok", "rejected", "expired", "error"}),
     },
@@ -431,9 +396,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_BILLING_CREDIT_SETTLE: {"outcome": SUCCESS_ERROR},
     M_CHAT_PROVIDER_ERROR: {"class": PROVIDER_ERROR_CLASS},
     M_CHAT_STREAM_TERMINAL: {"outcome": STREAM_TERMINAL},
-    M_TTS_UNIT: {"outcome": TTS_UNIT_OUTCOME},
-    M_TTS_PROVIDER: {"provider": TTS_PROVIDER},
-    M_TTS_COST_MICROUSD: {"provider": TTS_PROVIDER},
     M_DOCUMENT_MADE: {
         "kind": DOCUMENT_KIND,
         "format": DOCUMENT_FORMAT,
@@ -442,31 +404,18 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     },
     M_DOCUMENT_DESIGNED_OFFER: {"step": DESIGNED_OFFER_STEP},
     M_CHAT_SECURITY_MODE: {"mode": SECURITY_MODE},
-    M_CHAT_ROUTE: {
-        "route": ROUTE,
-        "transport": TRANSPORT,
-        "provider": PROVIDER,
-        "cloud_key": CLOUD_KEY,
-    },
     M_CHAT_TRANSPORT_RESOLUTION: {
         "transport": TRANSPORT,
         "reason": TRANSPORT_REASON,
     },
     M_PEEK_OUTCOME: {"variant": PEEK_VARIANT, "decision": PEEK_DECISION},
     M_PEEK_GUARD_OVERTURN: {"variant": PEEK_VARIANT},
-    M_PEEK_CUTOFF_HANDOFF: {"suppressed": BOOL},
     M_CTX_TRUNCATION: {"block_type": BLOCK_TYPE},
     M_CTX_HISTORY_EVICTION: {},
-    M_DEVICE_VRAM_DETECTION: {"source": VRAM_DETECTION_SOURCE},
-    M_DEVICE_VRAM_TIER: {"tier": TIER, "kv_halved": BOOL},
     M_LOCAL_TTFT: {
         "provider": PROVIDER,
         "state": frozenset({"cold", "hot"}),
         "le": _le_labels_for(M_LOCAL_TTFT),
-    },
-    M_LOCAL_TTFT_FIRST: {
-        "provider": PROVIDER,
-        "le": _le_labels_for(M_LOCAL_TTFT_FIRST),
     },
     M_LOCAL_OOM_RETRY: {"provider": PROVIDER},
     M_LOOP_GUARD_TRIP: {
@@ -475,7 +424,7 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "tier": LOOP_TIER,
     },
     M_NET_SERVICE_RECONNECT: {
-        "service": frozenset({"chat_socket", "device_realtime", "desktop_tunnel"}),
+        "service": frozenset({"chat_socket", "device_realtime"}),
         "lifecycle": frozenset({"foreground", "background"}),
     },
     M_CHAT_TURN_OUTCOME: {
@@ -495,8 +444,12 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "provider": PROVIDER,
     },
     M_CHAT_IMAGE_GENERATION: {"outcome": IMAGE_GEN_OUTCOME, "cloud_key": CLOUD_KEY},
-    M_CHAT_IMAGE_INPUT: {"route": ROUTE},
     M_ONBOARDING_MK_TRANSFER: {"outcome": SUCCESS_ERROR},
+    M_CRYPTO_KEY_RECOVERY: {
+        "method": KEY_RECOVERY_METHOD,
+        "outcome": SUCCESS_ERROR,
+        "reason": KEY_RECOVERY_REASON,
+    },
     M_LOCAL_THROUGHPUT: {
         "provider": PROVIDER,
         "le": _le_labels_for(M_LOCAL_THROUGHPUT),
@@ -511,11 +464,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "state": frozenset({"cold", "hot"}),
         "le": _le_labels_for(M_PAIRED_TTFT),
     },
-    M_RELAY_TTFT: {"provider": PROVIDER, "le": _le_labels_for(M_RELAY_TTFT)},
-    M_RELAY_TTFT_FIRST: {
-        "provider": PROVIDER,
-        "le": _le_labels_for(M_RELAY_TTFT_FIRST),
-    },
     M_RELAY_THROUGHPUT: {
         "provider": PROVIDER,
         "le": _le_labels_for(M_RELAY_THROUGHPUT),
@@ -527,7 +475,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
     M_RELAY_WATCHDOG_FIRE: {
         "phase": frozenset({"pre_first_token", "post_first_token"})
     },
-    M_RELAY_TRANSPORT: {"transport": TRANSPORT},
     M_TUNNEL_RECONNECT: {
         "cause": frozenset(
             {
@@ -540,8 +487,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
             }
         )
     },
-    M_TUNNEL_BACKOFF_DEPTH: {"le": _le_labels_for(M_TUNNEL_BACKOFF_DEPTH)},
-    M_TUNNEL_HEARTBEAT_STALE_CLOSE: {},
     M_MODEL_PULL: {
         "provider": PROVIDER,
         "outcome": frozenset({"success", "error", "cancelled"}),
@@ -580,11 +525,6 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "tier": TIER,
         "le": _le_labels_for(M_CTX_HW_FIT),
     },
-    M_CTX_CLAMP: {
-        "provider": PROVIDER,
-        "gpu_vendor": GPU_VENDOR,
-        "tier": TIER,
-    },
     M_CTX_PREFILL_SPEED: {
         "provider": PROVIDER,
         "tier": TIER,
@@ -594,26 +534,19 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
 
 BACKEND_OPS_METRICS = frozenset(
     {
-        M_WS_CONNECT,
         M_RELAY_EVENT,
         M_TUNNEL_EVENT,
-        M_CHAT_CLASSIFY_DECISION,
         M_CHAT_TOOL_EXECUTION,
         M_CHAT_TOOL_LATENCY,
         M_SEARCH_DIGEST,
-        M_SEARCH_ALIAS,
         M_OPENROUTER_CACHE,
         M_CHAT_TTFT,
-        M_CHAT_TTFT_FIRST,
-        M_CHAT_PEEK_HANDOFF_OVERTURN,
-        M_CHAT_REACT_FALLBACK,
         M_CHAT_CONTEXT_OVERFLOW_RETRY,
         M_INFRA_DB_POOL_WAIT,
         M_INFRA_S3_OP,
         M_INFRA_PUSH,
         M_INFRA_RATE_LIMIT_REJECT,
         M_INFRA_RATE_LIMIT_FALLBACK,
-        M_INFRA_EXA_QUOTA_BREACH,
         M_AUTH_OTP,
         M_AUTH_GOOGLE,
         M_AUTH_TOKEN_REFRESH,
@@ -626,9 +559,6 @@ BACKEND_OPS_METRICS = frozenset(
         M_BILLING_CREDIT_SETTLE,
         M_CHAT_PROVIDER_ERROR,
         M_CHAT_STREAM_TERMINAL,
-        M_TTS_UNIT,
-        M_TTS_PROVIDER,
-        M_TTS_COST_MICROUSD,
         M_DOCUMENT_MADE,
         M_DOCUMENT_DESIGNED_OFFER,
     }
@@ -642,21 +572,16 @@ FLUTTER_REPORTABLE_METRICS = (
     frozenset(
         {
             M_CHAT_SECURITY_MODE,
-            M_CHAT_ROUTE,
             M_CHAT_TRANSPORT_RESOLUTION,
-            M_PEEK_CUTOFF_HANDOFF,
             M_CTX_TRUNCATION,
             M_CTX_HISTORY_EVICTION,
-            M_DEVICE_VRAM_DETECTION,
-            M_DEVICE_VRAM_TIER,
             M_LOCAL_TTFT,
-            M_LOCAL_TTFT_FIRST,
             M_LOCAL_OOM_RETRY,
             M_NET_SERVICE_RECONNECT,
             M_CHAT_TURN_OUTCOME,
             M_CHAT_IMAGE_GENERATION,
-            M_CHAT_IMAGE_INPUT,
             M_ONBOARDING_MK_TRANSFER,
+            M_CRYPTO_KEY_RECOVERY,
             M_LOCAL_THROUGHPUT,
             M_SYNC_OPERATION,
             M_APP_CRASH,
@@ -675,15 +600,10 @@ FLUTTER_REPORTABLE_METRICS = (
 DAEMON_REPORTABLE_METRICS = (
     frozenset(
         {
-            M_RELAY_TTFT,
-            M_RELAY_TTFT_FIRST,
             M_RELAY_THROUGHPUT,
             M_RELAY_VRAM_RETRY,
             M_RELAY_WATCHDOG_FIRE,
-            M_RELAY_TRANSPORT,
             M_TUNNEL_RECONNECT,
-            M_TUNNEL_BACKOFF_DEPTH,
-            M_TUNNEL_HEARTBEAT_STALE_CLOSE,
             M_MODEL_PULL,
             M_PROVIDER_AUTO_REVIVE,
             M_PROVIDER_OPTIMIZE,
@@ -695,7 +615,6 @@ DAEMON_REPORTABLE_METRICS = (
             M_PAIRED_HOST_TTFT,
             M_CTX_FORMULA_FIT,
             M_CTX_HW_FIT,
-            M_CTX_CLAMP,
             M_CTX_PREFILL_SPEED,
         }
     )

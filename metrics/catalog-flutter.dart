@@ -4,23 +4,18 @@ class MetricNames {
   MetricNames._();
 
   static const String chatSecurityMode = 'chat.security_mode';
-  static const String chatRoute = 'chat.route';
   static const String chatTransportResolution = 'chat.transport_resolution';
   static const String peekOutcome = 'peek.outcome';
   static const String peekGuardOverturn = 'peek.guard_overturn';
-  static const String peekCutoffHandoff = 'peek.cutoff_handoff';
   static const String ctxTruncation = 'ctx.truncation';
   static const String ctxHistoryEviction = 'ctx.history_eviction';
-  static const String deviceVramDetection = 'device.vram_detection';
-  static const String deviceVramTier = 'device.vram_tier';
   static const String localTtft = 'local.ttft';
-  static const String localTtftFirst = 'local.ttft_first';
   static const String localOomRetry = 'local.oom_retry';
   static const String netServiceReconnect = 'net.service_reconnect';
   static const String chatTurnOutcome = 'chat.turn_outcome';
   static const String chatImageGeneration = 'chat.image_generation';
-  static const String chatImageInput = 'chat.image_input';
   static const String onboardingMkTransfer = 'onboarding.mk_transfer';
+  static const String cryptoKeyRecovery = 'crypto.key_recovery';
   static const String localThroughput = 'local.throughput';
   static const String syncOperation = 'sync.operation';
   static const String modelPull = 'model.pull';
@@ -36,10 +31,6 @@ class MetricNames {
   static const String daemonDeploy = 'daemon.deploy';
   static const String localSetup = 'local.setup';
   static const String billingCheckout = 'billing.checkout';
-
-  static const String bridgeRequest = 'bridge.request';
-  static const String bridgeTtft = 'bridge.ttft';
-  static const String pairedHostTtft = 'paired.host_ttft';
 }
 
 class MetricDims {
@@ -53,17 +44,15 @@ class MetricDims {
   static const String errorKind = 'error_kind';
   static const String variant = 'variant';
   static const String decision = 'decision';
-  static const String suppressed = 'suppressed';
   static const String blockType = 'block_type';
   static const String tier = 'tier';
-  static const String kvHalved = 'kv_halved';
   static const String state = 'state';
   static const String service = 'service';
   static const String lifecycle = 'lifecycle';
-  static const String source = 'source';
   static const String le = 'le';
   static const String outcome = 'outcome';
   static const String reason = 'reason';
+  static const String method = 'method';
   static const String fault = 'fault';
   static const String surface = 'surface';
 
@@ -86,19 +75,6 @@ class MetricValues {
 
   static const String transportLanP2p = 'lan_p2p';
   static const String transportRelay = 'relay';
-  static const String transportLocal = 'local';
-
-  static const String bridgeOutcomeSuccess = 'success';
-  static const String bridgeOutcomeCancelled = 'cancelled';
-  static const String bridgeOutcomeInvalid = 'invalid_request';
-  static const String bridgeOutcomeUnauthorized = 'unauthorized';
-  static const String bridgeOutcomeNotFound = 'not_found';
-  static const String bridgeOutcomeForbidden = 'forbidden';
-  static const String bridgeOutcomeRateLimited = 'rate_limited';
-  static const String bridgeOutcomeHostOffline = 'host_offline';
-  static const String bridgeOutcomeTimeout = 'timeout';
-  static const String bridgeOutcomeProviderError = 'provider_error';
-  static const String bridgeOutcomeInternal = 'internal';
 
   static const String providerOllama = 'ollama';
   static const String providerLmStudio = 'lmstudio';
@@ -151,22 +127,15 @@ class MetricValues {
 
   static const String serviceChatSocket = 'chat_socket';
   static const String serviceDeviceRealtime = 'device_realtime';
-  static const String serviceDesktopTunnel = 'desktop_tunnel';
 
   static const String lifecycleForeground = 'foreground';
   static const String lifecycleBackground = 'background';
-
-  static const String sourceDaemon = 'daemon';
-  static const String sourceFlutterFallback = 'flutter_fallback';
-  static const String sourceUnknown = 'unknown';
 
   static const String outcomeCompleted = 'completed';
   static const String outcomeError = 'error';
   static const String outcomeCancelled = 'cancelled';
   static const String outcomeSuccess = 'success';
 
-  static const String boolTrue = 'true';
-  static const String boolFalse = 'false';
   static const String faultWidget = 'widget';
   static const String faultAsync = 'async';
 
@@ -191,6 +160,17 @@ class MetricValues {
   static const String checkoutCancelled = 'cancelled';
   static const String checkoutFailed = 'failed';
   static const String checkoutElsewhere = 'elsewhere';
+
+  static const String recoveryMethodPin = 'pin';
+  static const String recoveryMethodRecoveryKey = 'recovery_key';
+
+  static const String recoveryReasonWrongPin = 'wrong_pin';
+  static const String recoveryReasonWrongKey = 'wrong_key';
+  static const String recoveryReasonBadFormat = 'bad_format';
+  static const String recoveryReasonLocked = 'locked';
+  static const String recoveryReasonRateLimited = 'rate_limited';
+  static const String recoveryReasonNoVault = 'no_vault';
+  static const String recoveryReasonOther = 'other';
 }
 
 class MetricBuckets {
@@ -213,7 +193,4 @@ class MetricBuckets {
     }
     return 'inf';
   }
-
-  static String boolValue(bool value) =>
-      value ? MetricValues.boolTrue : MetricValues.boolFalse;
 }

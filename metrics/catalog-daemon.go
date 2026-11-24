@@ -7,33 +7,25 @@ import (
 )
 
 const (
-	MetricPeekOutcome               = "peek.outcome"
-	MetricPeekGuardOverturn         = "peek.guard_overturn"
-	MetricRelayTTFT                 = "relay.ttft"
-	MetricRelayTTFTFirst            = "relay.ttft_first"
-	MetricRelayThroughput           = "relay.throughput"
-	MetricRelayVRAMRetry            = "relay.vram_retry"
-	MetricRelayWatchdogFire         = "relay.watchdog_fire"
-	MetricRelayTransport            = "relay.transport"
-	MetricTunnelReconnect           = "tunnel.reconnect"
-	MetricTunnelBackoffDepth        = "tunnel.backoff_depth"
-	MetricTunnelHeartbeatStaleClose = "tunnel.heartbeat_stale_close"
-	MetricModelPull                 = "model.pull"
-	MetricProviderAutoRevive        = "provider.auto_revive"
-	MetricProviderOptimize          = "provider.optimize"
-	MetricCtxHalveNumCtx            = "ctx.halve_numctx"
-	MetricDaemonActive              = "daemon.active"
-	MetricCryptoE2EEHandshake       = "crypto.e2ee_handshake"
-	MetricDeviceVRAMDetection       = "device.vram_detection"
-	MetricBridgeRequest             = "bridge.request"
-	MetricBridgeTTFT                = "bridge.ttft"
-	MetricPairedTTFT                = "paired.ttft"
-	MetricPairedHostTTFT            = "paired.host_ttft"
-	MetricCtxFormulaFit             = "ctx.formula_fit"
-	MetricCtxHwFit                  = "ctx.hw_fit"
-	MetricCtxClamp                  = "ctx.clamp"
-	MetricCtxPrefillSpeed           = "ctx.prefill_speed"
-	MetricLoopGuardTrip             = "local.loop_guard_trip"
+	MetricPeekOutcome         = "peek.outcome"
+	MetricPeekGuardOverturn   = "peek.guard_overturn"
+	MetricRelayThroughput     = "relay.throughput"
+	MetricRelayVRAMRetry      = "relay.vram_retry"
+	MetricRelayWatchdogFire   = "relay.watchdog_fire"
+	MetricTunnelReconnect     = "tunnel.reconnect"
+	MetricModelPull           = "model.pull"
+	MetricProviderAutoRevive  = "provider.auto_revive"
+	MetricProviderOptimize    = "provider.optimize"
+	MetricCtxHalveNumCtx      = "ctx.halve_numctx"
+	MetricDaemonActive        = "daemon.active"
+	MetricCryptoE2EEHandshake = "crypto.e2ee_handshake"
+	MetricBridgeRequest       = "bridge.request"
+	MetricBridgeTTFT          = "bridge.ttft"
+	MetricPairedHostTTFT      = "paired.host_ttft"
+	MetricCtxFormulaFit       = "ctx.formula_fit"
+	MetricCtxHwFit            = "ctx.hw_fit"
+	MetricCtxPrefillSpeed     = "ctx.prefill_speed"
+	MetricLoopGuardTrip       = "local.loop_guard_trip"
 )
 
 const (
@@ -48,7 +40,6 @@ const (
 	DimOutcome   = "outcome"
 	DimTier      = "tier"
 	DimKVHalved  = "kv_halved"
-	DimSource    = "source"
 	DimState     = "state"
 	DimStream    = "stream"
 	DimFamily    = "family"
@@ -91,10 +82,6 @@ const (
 	OutcomeError     = "error"
 	OutcomeCancelled = "cancelled"
 
-	SourceDaemon          = "daemon"
-	SourceFlutterFallback = "flutter_fallback"
-	SourceUnknown         = "unknown"
-
 	StateCold = "cold"
 	StateHot  = "hot"
 
@@ -123,7 +110,6 @@ const (
 var (
 	leLatencyBoundsMS     = []int64{200, 500, 1000, 2000, 5000, 10000}
 	leThroughputBoundsTPS = []float64{5, 10, 20, 40, 80}
-	leBackoffBoundsMS     = []int64{2000, 5000, 10000, 20000}
 	leRatioBoundsPct      = []int64{40, 60, 80, 95, 110, 130, 160, 200, 300, 500}
 	lePrefillBoundsTPS    = []int64{50, 150, 400, 1000, 3000}
 )
@@ -141,15 +127,6 @@ func BucketThroughput(tps float64) string {
 	for _, b := range leThroughputBoundsTPS {
 		if tps <= b {
 			return strconv.FormatFloat(b, 'f', -1, 64)
-		}
-	}
-	return "inf"
-}
-
-func BucketBackoff(ms int64) string {
-	for _, b := range leBackoffBoundsMS {
-		if ms <= b {
-			return strconv.FormatInt(b, 10)
 		}
 	}
 	return "inf"
@@ -285,17 +262,6 @@ func RecordCtxFit(col *Collector, provider, modelID string, downloadGB float64, 
 		DimGPUVendor: GPUVendorClass(vendor),
 		DimTier:      tier,
 		DimLE:        le,
-	}, 1)
-}
-
-func RecordCtxClamp(col *Collector, provider, vendor, tier string) {
-	if col == nil || provider == "" || tier == "" {
-		return
-	}
-	col.Incr(MetricCtxClamp, map[string]string{
-		DimProvider:  provider,
-		DimGPUVendor: GPUVendorClass(vendor),
-		DimTier:      tier,
 	}, 1)
 }
 
