@@ -27,6 +27,7 @@ class MetricNames {
   static const String pairedTtft = 'paired.ttft';
 
   static const String onboardingStep = 'onboarding.step';
+  static const String onboardingFirstTurn = 'onboarding.first_turn';
   static const String appUpdate = 'app.update';
   static const String daemonDeploy = 'daemon.deploy';
   static const String localSetup = 'local.setup';

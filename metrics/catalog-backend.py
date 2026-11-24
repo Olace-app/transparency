@@ -54,6 +54,8 @@ M_CHAT_PROVIDER_ERROR = "chat.provider_error"
 M_CHAT_STREAM_TERMINAL = "chat.stream_terminal"
 M_DOCUMENT_MADE = "document.made"
 M_DOCUMENT_DESIGNED_OFFER = "document.designed_offer"
+M_CHAT_REDACTION_REFUSAL = "chat.redaction_refusal"
+M_SEARCH_PROVIDER_KEY = "search.provider_key"
 
 M_CHAT_SECURITY_MODE = "chat.security_mode"
 M_CHAT_TRANSPORT_RESOLUTION = "chat.transport_resolution"
@@ -78,6 +80,7 @@ M_BILLING_CHECKOUT = "billing.checkout"
 M_APP_UPDATE = "app.update"
 M_DAEMON_DEPLOY = "daemon.deploy"
 M_LOCAL_SETUP = "local.setup"
+M_ONBOARDING_FIRST_TURN = "onboarding.first_turn"
 
 M_RELAY_THROUGHPUT = "relay.throughput"
 M_RELAY_VRAM_RETRY = "relay.vram_retry"
@@ -95,6 +98,7 @@ M_PAIRED_HOST_TTFT = "paired.host_ttft"
 M_CTX_FORMULA_FIT = "ctx.formula_fit"
 M_CTX_HW_FIT = "ctx.hw_fit"
 M_CTX_PREFILL_SPEED = "ctx.prefill_speed"
+M_PYEXEC_RUN = "pyexec.run"
 
 DIM_PLATFORM = "platform"
 DIM_APP_VERSION = "app_version"
@@ -250,6 +254,17 @@ BLOCK_TYPE = frozenset(
     {"other_files", "research_files", "attached_files", "project_files", "attachments"}
 )
 SUCCESS_ERROR = frozenset({"success", "error"})
+REDACTION_REFUSAL_REASON = frozenset(
+    {"unredacted", "readable_fields", "raw_files", "bad_ctx"}
+)
+SEARCH_PROVIDER = frozenset({"tavily", "serper", "brave", "pexels", "exa"})
+PROVIDER_KEY_REASON = frozenset({"refused", "out_of_credits", "rate_limited"})
+PYEXEC_OUTCOME = frozenset(
+    {
+        "ok", "script_error", "syntax_error", "timeout", "install_timeout",
+        "cancelled", "not_ready", "sandbox_unavailable", "sandbox_error",
+    }
+)
 KEY_RECOVERY_METHOD = frozenset({"pin", "recovery_key"})
 KEY_RECOVERY_REASON = frozenset(
     {"wrong_pin", "wrong_key", "bad_format", "locked", "rate_limited", "no_vault", "other"}
@@ -403,6 +418,13 @@ METRIC_DIM_SPEC: dict[str, dict[str, frozenset[str]]] = {
         "lane": DOCUMENT_LANE,
     },
     M_DOCUMENT_DESIGNED_OFFER: {"step": DESIGNED_OFFER_STEP},
+    M_CHAT_REDACTION_REFUSAL: {"reason": REDACTION_REFUSAL_REASON},
+    M_SEARCH_PROVIDER_KEY: {
+        "provider": SEARCH_PROVIDER,
+        "reason": PROVIDER_KEY_REASON,
+    },
+    M_ONBOARDING_FIRST_TURN: {"route": ROUTE},
+    M_PYEXEC_RUN: {"outcome": PYEXEC_OUTCOME},
     M_CHAT_SECURITY_MODE: {"mode": SECURITY_MODE},
     M_CHAT_TRANSPORT_RESOLUTION: {
         "transport": TRANSPORT,
@@ -561,6 +583,8 @@ BACKEND_OPS_METRICS = frozenset(
         M_CHAT_STREAM_TERMINAL,
         M_DOCUMENT_MADE,
         M_DOCUMENT_DESIGNED_OFFER,
+        M_CHAT_REDACTION_REFUSAL,
+        M_SEARCH_PROVIDER_KEY,
     }
 )
 
@@ -591,6 +615,7 @@ FLUTTER_REPORTABLE_METRICS = (
             M_APP_UPDATE,
             M_DAEMON_DEPLOY,
             M_LOCAL_SETUP,
+            M_ONBOARDING_FIRST_TURN,
         }
     )
     | _SHARED_DEVICE_METRICS
@@ -616,6 +641,7 @@ DAEMON_REPORTABLE_METRICS = (
             M_CTX_FORMULA_FIT,
             M_CTX_HW_FIT,
             M_CTX_PREFILL_SPEED,
+            M_PYEXEC_RUN,
         }
     )
     | _SHARED_DEVICE_METRICS

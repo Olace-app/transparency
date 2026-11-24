@@ -26,6 +26,7 @@ const (
 	MetricCtxHwFit            = "ctx.hw_fit"
 	MetricCtxPrefillSpeed     = "ctx.prefill_speed"
 	MetricLoopGuardTrip       = "local.loop_guard_trip"
+	MetricPyexecRun           = "pyexec.run"
 )
 
 const (
@@ -105,6 +106,16 @@ const (
 	LoopTierShort  = "short"
 	LoopTierBlock  = "block"
 	LoopTierBudget = "budget"
+
+	PyexecOutcomeOK                 = "ok"
+	PyexecOutcomeScriptError        = "script_error"
+	PyexecOutcomeSyntaxError        = "syntax_error"
+	PyexecOutcomeTimeout            = "timeout"
+	PyexecOutcomeInstallTimeout     = "install_timeout"
+	PyexecOutcomeCancelled          = "cancelled"
+	PyexecOutcomeNotReady           = "not_ready"
+	PyexecOutcomeSandboxUnavailable = "sandbox_unavailable"
+	PyexecOutcomeSandboxError       = "sandbox_error"
 )
 
 var (
@@ -175,6 +186,13 @@ func RecordPairedHostTTFT(col *Collector, provider, transport string, cold bool,
 		DimTransport: transport,
 		DimState:     state,
 	}, d.Milliseconds())
+}
+
+func RecordPyexecRun(col *Collector, outcome string) {
+	if col == nil || outcome == "" || col.DirectTurnActive() {
+		return
+	}
+	col.Incr(MetricPyexecRun, map[string]string{DimOutcome: outcome}, 1)
 }
 
 func RecordE2EEHandshake(col *Collector, transport string, ok bool) {
